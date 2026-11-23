@@ -424,6 +424,12 @@
     if (innerWidth <= 900) return 0;
     const c = $('#card'); return (c.offsetWidth + 40) / 2;
   }
+  // на телефоні картка знизу: піднімаємо будівлю у вільну верхню частину екрана
+  function cardVShift() {
+    if (innerWidth > 900) return 0;
+    const c = $('#card'); return Math.round(Math.min(c.offsetHeight + 16, innerHeight * 0.6) / 2);
+  }
+  $('#cMore').addEventListener('click', () => $('#card').classList.toggle('open'));
   function applyView() {
     if (Math.abs(viewShift) < 0.5) camera.clearViewOffset();
     else camera.setViewOffset(innerWidth, innerHeight, viewShift, 0, innerWidth, innerHeight);
@@ -445,6 +451,7 @@
     $('#cTitle').textContent = w.title;
     $('#cTitle').classList.toggle('long', w.title.split(' ').some((word) => word.length > 12));
     $('#cLead').textContent = w.lead;
+    $('#card').classList.remove('open');
     const ul = $('#cFacts'); ul.innerHTML = '';
     w.facts.forEach((f, k) => {
       const li = document.createElement('li'); li.textContent = f; ul.appendChild(li);
@@ -467,7 +474,7 @@
   const pool = new Map(); // scene url → { el, ready, queue, used }
   let sceneOn = false, active = null;
   function sceneUrl(w, paused) {
-    return `${w.scene}?embed&view=${w.sceneView || 'drone'}&shift=${Math.round(cardShift())}${paused ? '&paused' : ''}`;
+    return `${w.scene}?embed&view=${w.sceneView || 'drone'}&shift=${Math.round(cardShift())}&vshift=${cardVShift()}${paused ? '&paused' : ''}`;
   }
   function postTo(f, msg) { if (f.ready) f.el.contentWindow.postMessage(msg, '*'); else f.queue.push(msg); }
   function post(msg) { if (active) postTo(active, msg); }
@@ -505,7 +512,7 @@
   function showScene(w, i) {
     const { f, fresh } = getScene(w, false);
     for (const o of pool.values()) if (o !== f && o.el.classList.contains('on')) { o.el.classList.remove('on'); postTo(o, { paused: true }); }
-    if (!fresh) postTo(f, { view: w.sceneView || 'drone', shift: Math.round(cardShift()), paused: false });
+    if (!fresh) postTo(f, { view: w.sceneView || 'drone', shift: Math.round(cardShift()), vshift: cardVShift(), paused: false });
     f.el.classList.add('on'); sceneOn = true; active = f;
     evict([f]);
     // підвантажуємо наступне чудо, поки розповідають про поточне
@@ -854,7 +861,7 @@
     composer.setPixelRatio(pixelRatio); composer.setSize(innerWidth, innerHeight);
     bloom.setSize(innerWidth * pixelRatio, innerHeight * pixelRatio);
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-    if (mode === 'wonder') { viewTarget = viewShift = cardShift(); }
+    if (mode === 'wonder') { viewTarget = viewShift = cardShift(); post({ shift: Math.round(cardShift()), vshift: cardVShift() }); }
     applyView(); sizeConf();
   }
   addEventListener('resize', onResize);

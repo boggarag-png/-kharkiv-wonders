@@ -1081,7 +1081,7 @@ setTimeout(() => { $('#hint').style.opacity = 0; }, 12000);
 const QS = new URLSearchParams(location.search);
 const EMBED = QS.has('embed');
 if (EMBED) document.body.classList.add('embed');
-let SHIFT = 0, PAUSED = QS.has('paused');
+let SHIFT = 0, VSHIFT = +QS.get('vshift') || 0, PAUSED = QS.has('paused');
 if (EMBED) addEventListener('keydown', (e) => {
   if (['ArrowRight', 'ArrowLeft', ' ', 'PageDown', 'PageUp', 'Escape', 'f', 'F', '1', '2', '3', '4', '5', '6', '7'].includes(e.key)) {
     e.preventDefault(); parent.postMessage({ key: e.key }, '*');
@@ -1089,6 +1089,7 @@ if (EMBED) addEventListener('keydown', (e) => {
 });
 addEventListener('message', (ev) => {
   const d = ev.data || {};
+  if (d.vshift !== undefined) { VSHIFT = +d.vshift || 0; onResize(); }
   if (d.shift !== undefined) { SHIFT = +d.shift || 0; document.body.style.setProperty('--card', (SHIFT * 2) + 'px'); onResize(); }
   if (d.view) { curView = VIEWS[d.view] ? d.view : 'drone'; userMoved = false; flyTo(curView, d.instant ? 0.01 : 2.6); }
   if (d.paused !== undefined) { const was = PAUSED; PAUSED = !!d.paused; if (!PAUSED) { clock.getDelta(); if (was) armCycle(); } else if (SND && AC) SND.master.gain.setTargetAtTime(0, AC.currentTime, 0.2); }
@@ -1097,7 +1098,7 @@ addEventListener('message', (ev) => {
 function onResize() {
   const w = innerWidth, h = innerHeight;
   camera.aspect = w / h; camera.fov = w / h < 0.9 ? 52 : 36; camera.updateProjectionMatrix();
-  if (SHIFT) camera.setViewOffset(w, h, SHIFT, 0, w, h); else camera.clearViewOffset();
+  if (SHIFT || VSHIFT) camera.setViewOffset(w, h, SHIFT, VSHIFT, w, h); else camera.clearViewOffset();
   renderer.setSize(w, h); composer.setSize(w, h);
   STARU.px.value = renderer.getPixelRatio();
 }
