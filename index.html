@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Сім чудес Харкова — 3D-подорож</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="stage"></div>
+  <iframe id="map3d" title="3D-мапа Харкова" allow="fullscreen"></iframe>
+  <iframe id="scene3d" title="3D-сцена" allow="fullscreen"></iframe>
+  <canvas id="confetti"></canvas>
+  <div id="fade"></div>
+
+  <!-- Верхня панель -->
+  <header id="topbar" class="hidden">
+    <button class="brand" id="brandBtn" title="На карту">
+      <span class="brand-num">7</span>
+      <span class="brand-txt">чудес<br>Харкова</span>
+    </button>
+    <nav id="dots"></nav>
+    <div class="top-actions">
+      <button class="icon-btn" id="mapBtn" title="Карта (Esc)">
+        <svg viewBox="0 0 24 24"><path d="M9 3 3 5.5v15.5l6-2.5 6 2.5 6-2.5V3l-6 2.5L9 3Zm0 2.2 6 2.5v11.1l-6-2.5V5.2Z"/></svg>
+      </button>
+      <button class="icon-btn" id="fxBtn" title="Ефекти: увімк/вимк">
+        <svg viewBox="0 0 24 24"><path d="m12 2 2.4 6.6L21 9l-5.2 4.3L17.6 21 12 17.3 6.4 21l1.8-7.7L3 9l6.6-.4L12 2Z"/></svg>
+      </button>
+      <button class="icon-btn" id="fsBtn" title="На весь екран (F)">
+        <svg viewBox="0 0 24 24"><path d="M4 9V4h5v2H6v3H4Zm10-5h6v5h-2V6h-4V4ZM4 15h2v3h3v2H4v-5Zm14 3v-3h2v5h-5v-2h3Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Заставка -->
+  <section id="intro" class="screen show">
+    <div class="intro-inner">
+      <h1 class="title">
+        <span class="t-line" id="t1">Сім чудес</span>
+        <span class="t-line accent" id="t2">Харкова</span>
+      </h1>
+      <button id="startBtn" class="btn big pulse">
+        Почати подорож
+        <svg viewBox="0 0 24 24"><path d="M5 12h12m-5-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="speakers" id="introSpeakers"></div>
+    </div>
+    <div class="flag-line"></div>
+  </section>
+
+  <!-- Підказка на карті -->
+  <section id="mapHint" class="hidden">
+    <div class="hint-title">Оберіть чудо на карті</div>
+    <button class="btn" id="firstBtn">Почати з першого →</button>
+  </section>
+
+  <!-- Картка чуда -->
+  <aside id="card" class="hidden">
+    <div class="card-head">
+      <div class="card-num" id="cNum">01</div>
+      <div>
+        <div class="card-tag" id="cTag"></div>
+        <h2 class="card-title" id="cTitle"></h2>
+      </div>
+    </div>
+    <p class="card-lead" id="cLead"></p>
+    <ul class="card-facts" id="cFacts"></ul>
+    <blockquote class="card-quote" id="cQuote"></blockquote>
+    <div class="card-foot">
+      <div class="card-speaker" id="cSpeaker"></div>
+      <div class="card-nav">
+        <button class="btn ghost" id="prevBtn">←</button>
+        <button class="btn" id="nextBtn">Далі →</button>
+      </div>
+    </div>
+  </aside>
+
+  <div id="caption" class="hidden"></div>
+  <div id="dragHint" class="hidden">
+    <svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.3 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 5v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Крутіть модель пальцем · Зводьте два пальці для масштабу
+  </div>
+
+  <!-- Вікторина -->
+  <section id="quiz" class="screen">
+    <div class="quiz-box">
+      <div class="quiz-top">
+        <span class="kicker">Вікторина</span>
+        <span id="qCounter">1 / 7</span>
+      </div>
+      <h2 id="qText"></h2>
+      <div id="qAnswers"></div>
+      <div class="quiz-bottom">
+        <div id="qScore"></div>
+        <button class="btn" id="qNext" disabled>Далі →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Фінал -->
+  <section id="final" class="screen">
+    <div class="final-inner">
+      <div class="final-line" id="f1">Харків —</div>
+      <div class="final-line accent" id="f2">місто, яке неможливо не любити</div>
+      <div class="final-score" id="fScore"></div>
+      <div class="final-bottom">
+        <div class="final-names" id="fNames"></div>
+        <div class="final-qr" id="fQr"></div>
+      </div>
+      <div class="final-actions">
+        <button class="btn ghost" id="againBtn">↺ Ще раз</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="loader"><div class="spin"></div><div>Будуємо Харків…</div></div>
+
+  <script>
+    // показ помилок на екрані (лише коли в адресі є ?debug)
+    if (location.search.indexOf('debug') >= 0) {
+      const box = document.createElement('pre');
+      box.style.cssText = 'position:fixed;left:0;bottom:0;z-index:99;color:#fff;background:#a00;font:14px monospace;max-width:100%;white-space:pre-wrap;margin:0;padding:6px';
+      const log = (m) => { box.textContent += m + '\n'; document.body.appendChild(box); };
+      addEventListener('error', (e) => log('ERR: ' + e.message + ' @' + e.lineno));
+      addEventListener('unhandledrejection', (e) => log('REJ: ' + (e.reason && (e.reason.stack || e.reason))));
+    }
+  </script>
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/CopyShader.js"></script>
+  <script src="vendor/LuminosityHighPassShader.js"></script>
+  <script src="vendor/EffectComposer.js"></script>
+  <script src="vendor/RenderPass.js"></script>
+  <script src="vendor/ShaderPass.js"></script>
+  <script src="vendor/UnrealBloomPass.js"></script>
+  <script src="vendor/RoomEnvironment.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

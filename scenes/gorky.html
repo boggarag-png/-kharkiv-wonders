@@ -1,0 +1,1411 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Парк Горького 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* локальні шрифти — інтернет не потрібен */
+@font-face{font-family:'Unbounded';font-weight:500 800;src:url('../fonts/unbounded-cyrillic-700-normal.woff2') format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
+@font-face{font-family:'Unbounded';font-weight:500 800;src:url('../fonts/unbounded-latin-700-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:'Manrope';font-weight:400 500;src:url('../fonts/montserrat-cyrillic-400-normal.woff2') format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
+@font-face{font-family:'Manrope';font-weight:400 500;src:url('../fonts/montserrat-latin-400-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:'Manrope';font-weight:600 800;src:url('../fonts/montserrat-cyrillic-600-normal.woff2') format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
+@font-face{font-family:'Manrope';font-weight:600 800;src:url('../fonts/montserrat-latin-600-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+2000-206F}
+/* режим вбудовування в головний сайт */
+body.embed .brand, body.embed .hint{display:none!important}
+[hidden]{display:none!important}
+/* завантажувач не має перехоплювати дотики, коли зникає */
+.loader[style*="opacity: 0"]{pointer-events:none}
+</style>
+<script>if (/[?&]embed/.test(location.search)) document.documentElement.classList.add('embed-root');</script>
+<style>
+:root{
+  --bg:#05070f;
+  --ink:#f3f1ec;
+  --ink-2:rgba(226,230,240,.74);
+  --glass-3:rgba(255,255,255,.16);
+  --gold:#ffd36a;
+  --f-display:'Unbounded','Arial Black',system-ui,sans-serif;
+  --f-body:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+.brand{position:fixed;top:calc(env(safe-area-inset-top,0px) + 22px);left:max(22px,calc(env(safe-area-inset-left,0px) + 16px));
+  max-width:min(700px,calc(100vw - 44px));pointer-events:none;text-shadow:0 2px 22px rgba(0,4,16,.8),0 1px 3px rgba(0,0,0,.5);z-index:2}
+.eyebrow{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+.brand h1{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3.2vw,46px);line-height:1.0;letter-spacing:.015em;margin:.3em 0 .32em}
+.brand p{font-size:13px;line-height:1.5;color:var(--ink-2);margin:0}
+.brand p b{color:var(--ink);font-weight:600}
+.hint{position:fixed;right:max(22px,calc(env(safe-area-inset-right,0px) + 16px));top:calc(env(safe-area-inset-top,0px) + 26px);
+  font-size:12px;line-height:1.6;color:var(--ink-2);text-align:right;transition:opacity 1.2s ease;pointer-events:none;z-index:2;text-shadow:0 1px 10px rgba(0,4,16,.9)}
+.hint b{color:var(--gold);font-weight:600}
+.loader{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:10;transition:opacity .9s ease}
+.loader div{text-align:center;padding:0 16px}
+.loader strong{display:block;font-family:var(--f-display);font-weight:800;font-size:28px;letter-spacing:.04em}
+.loader span{display:block;margin-top:10px;font-size:13px;color:var(--ink-2)}
+.bar{width:160px;height:3px;margin:16px auto 0;background:var(--glass-3);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:40%;background:var(--gold);animation:slide 1.1s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+.loader span.err{color:#ffb357}
+@media (max-width:700px){ .hint{display:none} .brand p{font-size:12px} }
+@media (prefers-reduced-motion:reduce){.bar i{animation:none}.loader,.hint{transition:none}}
+</style>
+
+<div id="stage" aria-label="Інтерактивна 3D-модель нічного парку Горького в Харкові: колесо огляду з кольоровими вогнями, канатна дорога, каруселі, фонтан і святковий салют"></div>
+
+<header class="brand">
+  <div class="eyebrow">Харків · вулиця Сумська, 81</div>
+  <h1>ПАРК ГОРЬКОГО</h1>
+  <p><b>з 1893 року</b> · колесо огляду, канатна дорога, атракціони</p>
+</header>
+
+<div class="hint" id="hint">Тягнути — обертати<br>Колесо або щипок — наблизити<br><b>Торкніться неба — салют</b></div>
+
+<div class="loader" id="loader"><div><strong>ПАРК ГОРЬКОГО</strong><span id="loadmsg">Запалюємо вогні на колесі огляду…</span><div class="bar"><i></i></div></div></div>
+
+<script>
+/* якщо щось зламалося — показуємо зрозуміле повідомлення замість чорного екрана */
+(function () {
+  function fail(msg) {
+    var m = document.getElementById('loadmsg'), L = document.getElementById('loader');
+    if (m) { m.textContent = 'Не вдалося запустити 3D-сцену: ' + (msg || 'невідома помилка'); m.className = 'err'; }
+    if (L) { L.hidden = false; L.style.display = ''; L.style.opacity = 1; L.style.pointerEvents = 'auto'; }
+  }
+  window.__errs = []; var ce = console.error; console.error = function () { try { window.__errs.push([].join.call(arguments, ' ').slice(0, 300)); } catch (e) {} return ce.apply(console, arguments); };
+  addEventListener('error', function (e) { fail(e.message); });
+  addEventListener('unhandledrejection', function (e) { fail(e.reason && e.reason.message ? e.reason.message : String(e.reason)); });
+})();
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "../vendor/three160/build/three.module.js",
+  "three/addons/": "../vendor/three160/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { autoQuality } from '../js/perf.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const $ = s => document.querySelector(s);
+const D2R = Math.PI / 180, TAU = Math.PI * 2;
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rand = mulberry32(18932012);
+const R = (a, b) => a + (b - a) * rand();
+const RI = (a, b) => Math.floor(R(a, b + 1));
+const pick = arr => arr[Math.floor(rand() * arr.length)];
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = Math.min(innerWidth, innerHeight) < 640 || (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900); // велика сенсорна дошка — повна якість
+const PRCAP = Math.sqrt(8.3e6 / Math.max(1, innerWidth * innerHeight));
+/* msaa = 0: на HalfFloat-цілях MSAA давав білі «вигорілі» квадрати на шкільних ПК; згладжування — FXAA */
+const Q = small
+  ? { shadow: 2048, trees: 0.55, pr: Math.min(devicePixelRatio, 1.5, PRCAP), plan: 2048, lf: 1024, msaa: 0, stars: 1600, fount: 2400, fw: 110 }
+  : { shadow: 4096, trees: 1.0, pr: Math.min(devicePixelRatio, 2, PRCAP), plan: 4096, lf: 2048, msaa: 0, stars: 3200, fount: 4800, fw: 170 };
+
+/* ---------- спрямований туман, підсвічений місяцем ---------- */
+THREE.ShaderChunk.fog_pars_vertex = `#ifdef USE_FOG
+varying float vFogDepth; varying vec3 vFogView;
+#endif`;
+THREE.ShaderChunk.fog_vertex = `#ifdef USE_FOG
+vFogDepth = - mvPosition.z; vFogView = mvPosition.xyz;
+#endif`;
+THREE.ShaderChunk.fog_pars_fragment = `#ifdef USE_FOG
+uniform vec3 fogColor; varying float vFogDepth; varying vec3 vFogView;
+uniform vec3 uFogSunView; uniform vec3 uFogSunColor;
+#ifdef FOG_EXP2
+uniform float fogDensity;
+#else
+uniform float fogNear; uniform float fogFar;
+#endif
+#endif`;
+THREE.ShaderChunk.fog_fragment = `#ifdef USE_FOG
+#ifdef FOG_EXP2
+float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
+#else
+float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
+#endif
+float fogSun = pow( max( dot( normalize( vFogView + vec3(0.0, 0.0, -1e-4) ), uFogSunView ), 0.0 ), 6.0 );
+gl_FragColor.rgb = mix( gl_FragColor.rgb, mix( fogColor, uFogSunColor, fogSun ), fogFactor );
+#endif`;
+const FOGU = { v: { value: new THREE.Vector3(0, 0, -1) }, c: { value: new THREE.Color() } };
+const fogPatch = s => { s.uniforms.uFogSunView = FOGU.v; s.uniforms.uFogSunColor = FOGU.c; };
+const MATS = [];
+function std(p, envK = 1) { const m = new THREE.MeshStandardMaterial(p); m.onBeforeCompile = fogPatch; m.userData.envK = envK; MATS.push(m); return m; }
+function lambert(p) { const m = new THREE.MeshLambertMaterial(p); m.onBeforeCompile = fogPatch; return m; }
+function basic(p) { const m = new THREE.MeshBasicMaterial(p); m.onBeforeCompile = fogPatch; return m; }
+const hdr = (hex, k) => new THREE.Color(hex).multiplyScalar(k);
+
+/* спільні «живі» величини для шейдерів */
+const TIME = { value: 0 };
+const FOGD = { value: 0.0031 };
+const PXU = { value: 0.001 };          // розмір одного пікселя на глибині 1 м
+const PSU = { value: 600 };            // масштаб розміру точок
+const WMU = { value: new THREE.Vector4(1, 0, 0, 0) };   // ваги режимів підсвічування колеса
+const MOONDIR = new THREE.Vector3(-0.42, 0.3, -0.86).normalize();
+const MOONU = { value: MOONDIR.clone() };
+
+const GLSL_N3 = `
+float h31(vec3 p){ p = fract(p * 0.3183099 + vec3(0.11, 0.17, 0.13)); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float n3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(h31(i), h31(i + vec3(1,0,0)), f.x), mix(h31(i + vec3(0,1,0)), h31(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(h31(i + vec3(0,0,1)), h31(i + vec3(1,0,1)), f.x), mix(h31(i + vec3(0,1,1)), h31(i + vec3(1,1,1)), f.x), f.y), f.z); }`;
+const GLSL_HSV = `vec3 hsv(float h, float s, float v){ vec3 k = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0); return v * mix(vec3(1.0), k, s); }
+float h11(float x){ return fract(sin(x * 127.1 + 3.7) * 43758.5453); }`;
+
+/* ---------- renderer / scene ---------- */
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Q.pr);
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.autoUpdate = false;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+$('#stage').appendChild(renderer.domElement);
+const MAXANI = Math.min(16, renderer.capabilities.getMaxAnisotropy());
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0e1322, FOGD.value);
+const camera = new THREE.PerspectiveCamera(innerWidth / innerHeight < 0.9 ? 52 : 36, innerWidth / innerHeight, 0.3, 6000);
+
+/* ---------- canvas texture helpers ---------- */
+function cnv(w, h = w) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function ctex(c, srgb = true, repeat = true) {
+  const t = new THREE.CanvasTexture(c);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  if (repeat) t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = MAXANI; t.needsUpdate = true; return t;
+}
+function grain(ctx, w, h, amt) {
+  const d = ctx.getImageData(0, 0, w, h), a = d.data;
+  for (let i = 0; i < a.length; i += 4) { const n = (rand() - 0.5) * amt; a[i] += n; a[i + 1] += n; a[i + 2] += n; }
+  ctx.putImageData(d, 0, 0);
+}
+const noiseCanvas = (() => { const c = cnv(256), g = c.getContext('2d'); g.fillStyle = '#808080'; g.fillRect(0, 0, 256, 256); grain(g, 256, 256, 70); return c; })();
+const NOISET = ctex(noiseCanvas, false, true);
+function radialTex(stops, S = 128) { const c = cnv(S), g = c.getContext('2d'); const r = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2); stops.forEach(([p, col]) => r.addColorStop(p, col)); g.fillStyle = r; g.fillRect(0, 0, S, S); return ctex(c, true, false); }
+function stripeTex(cols, n, w = 512, h = 64, extra) { const c = cnv(w, h), g = c.getContext('2d'); for (let i = 0; i < n; i++) { g.fillStyle = cols[i % cols.length]; g.fillRect(i * w / n, 0, w / n + 1, h); } if (extra) extra(g, w, h); grain(g, w, h, 10); const t = ctex(c); return t; }
+/* нічний фасадний атлас 4x4 вікна (1 текстура = 16 x 16 м) */
+function nightAtlas(wall, lit, cool = 0) {
+  const S = 512, C = S / 4, cA = cnv(S), cE = cnv(S), a = cA.getContext('2d'), e = cE.getContext('2d');
+  a.fillStyle = wall; a.fillRect(0, 0, S, S); grain(a, S, S, 12);
+  e.fillStyle = '#000'; e.fillRect(0, 0, S, S);
+  for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) {
+    const x0 = i * C, y0 = j * C, wx = x0 + C * 0.26, wy = y0 + C * 0.24, ww = C * 0.48, wh = C * 0.5;
+    a.fillStyle = 'rgba(0,0,0,0.25)'; a.fillRect(x0, y0 + C - 4, C, 4);
+    a.fillStyle = '#1a1d24'; a.fillRect(wx, wy, ww, wh);
+    if (rand() < lit) {
+      const b = R(0.45, 1), u = rand();
+      const col = u < cool ? [205, 215, 230] : u < 0.85 ? [255, 176, 92] : [255, 205, 130];
+      e.fillStyle = `rgb(${col[0] * b | 0},${col[1] * b | 0},${col[2] * b | 0})`; e.fillRect(wx, wy, ww, wh);
+    }
+    e.fillStyle = '#000'; e.fillRect(wx + ww / 2 - 2, wy, 4, wh);
+  }
+  return { map: ctex(cA), em: ctex(cE) };
+}
+function planarUV(g, k = 4) {
+  const p = g.attributes.position, n = g.attributes.normal;
+  let uv = g.attributes.uv; if (!uv) { uv = new THREE.BufferAttribute(new Float32Array(p.count * 2), 2); g.setAttribute('uv', uv); }
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i), nx = Math.abs(n.getX(i)), ny = Math.abs(n.getY(i)), nz = Math.abs(n.getZ(i));
+    if (ny > 0.7) uv.setXY(i, x / k, z / k); else if (nx > nz) uv.setXY(i, z / k, y / k); else uv.setXY(i, x / k, y / k);
+  }
+  return g;
+}
+const clean = (g, keepUV) => { const q = g.index ? g.toNonIndexed() : g; for (const n of Object.keys(q.attributes)) if (!['position', 'normal', ...(keepUV ? ['uv'] : [])].includes(n)) q.deleteAttribute(n); if (!q.attributes.normal) q.computeVertexNormals(); return q; };
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const UPV = V3(0, 1, 0);
+/* труба між двома точками */
+function tube(a, b, r0, r1 = r0, seg = 6) {
+  const d = b.clone().sub(a), L = d.length();
+  const g = new THREE.CylinderGeometry(r1, r0, L, seg, 1, false).translate(0, L / 2, 0);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UPV, d.normalize())); g.translate(a.x, a.y, a.z);
+  return clean(g);
+}
+const boxG = (cx, y0, cz, w, h, d) => clean(new THREE.BoxGeometry(w, h, d).translate(cx, y0 + h / 2, cz));
+
+/* ================= ПЛАН ПАРКУ =================
+   Вісь z: +z — вулиця Сумська з головним входом, −z — углиб парку.
+   Центральна алея веде від колонади входу повз фонтан до колеса огляду. */
+const PD = 700;                                   // розмір плану, м
+const GATE_Z = 60;
+const FN = { x: 0, z: 14, r: 8 };                 // фонтан
+const WH = { x: 0, y: 31, z: -50, R: 25, ry: -0.5 };   // колесо огляду
+const CAR = { x: -27, z: -6 };                    // карусель
+const SW = { x: 28, z: -14 };                     // ланцюгова карусель
+const PLAZAS = [[FN.x, FN.z, 18], [WH.x, WH.z, 26], [CAR.x, CAR.z, 12.5], [SW.x, SW.z, 11.5], [0, 66, 0]];
+function sampleCurve(pts, step = 2.5) {
+  const c = new THREE.CatmullRomCurve3(pts.map(([x, z]) => V3(x, 0, z)), false, 'centripetal');
+  return c.getSpacedPoints(Math.max(2, Math.ceil(c.getLength() / step))).map(v => [v.x, v.z]);
+}
+const PATHS = [
+  { w: 5, p: [[-14, 9], [-22, 2], [-27, -6]] }, { w: 5, p: [[14, 9], [22, 0], [28, -14]] },
+  { w: 5, p: [[-27, -6], [-23, -28], [-14, -44]] }, { w: 5, p: [[28, -14], [24, -34], [16, -46]] },
+  { w: 6, p: [[18, -62], [48, -74], [84, -80]] },
+  { w: 6, p: [[0, -74], [-8, -112], [10, -160], [0, -230]] },
+  { w: 4, p: [[-7, 42], [-40, 36], [-70, 10], [-80, -40], [-58, -90], [-22, -70]] },
+  { w: 4, p: [[7, 42], [42, 34], [70, 8], [82, -40], [64, -70]] },
+  { w: 4, p: [[-70, 10], [-120, -10], [-165, -60]] }, { w: 4, p: [[-58, -90], [-92, -150], [-60, -215]] },
+  { w: 4, p: [[82, -40], [130, -60], [160, -110]] },
+].map(o => ({ w: o.w, pts: sampleCurve(o.p) }));
+function segD(px, pz, ax, az, bx, bz) { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz; const t = l2 ? clamp(((px - ax) * dx + (pz - az) * dz) / l2, 0, 1) : 0; return Math.hypot(px - ax - dx * t, pz - az - dz * t); }
+function pathDist(x, z) { let m = 1e9; for (const p of PATHS) for (let i = 0; i < p.pts.length - 1; i++) { const a = p.pts[i], b = p.pts[i + 1]; const d = segD(x, z, a[0], a[1], b[0], b[1]) - p.w / 2; if (d < m) m = d; } return m; }
+
+/* канатна дорога: опори вздовж лінії за колесом */
+const CABLE = [[90, 7.5, -80], [52, 25, -86], [6, 27, -94], [-44, 27, -106], [-96, 28, -120], [-152, 28, -136], [-214, 29, -154], [-280, 30, -172], [-350, 31, -190]];
+
+function treeOK(x, z) {
+  if (z > 54) return Math.abs(x) > 70 && z > 88 && z < 100;            // вулиця й тротуари
+  if (Math.abs(x) < 12 && z > -28) return false;                      // центральна алея
+  for (const [px, pz, r] of PLAZAS) if (Math.hypot(x - px, z - pz) < r + 3) return false;
+  if (Math.abs(x) < 30 && z > 50) return false;                       // колонада входу
+  if (x > 76 && x < 108 && z > -96 && z < -66) return false;           // нижня станція канатки
+  return pathDist(x, z) > 2.2;
+}
+const TREES = [];
+{
+  const step = 8.2 / Math.sqrt(Q.trees);
+  for (let x = -175; x <= 175; x += step) for (let z = -270; z <= 54; z += step) {
+    const tx = x + R(-2.6, 2.6), tz = z + R(-2.6, 2.6);
+    if (rand() < 0.1 || !treeOK(tx, tz)) continue;
+    TREES.push({ x: tx, z: tz, s: R(0.8, 1.2), k: rand() < 0.16 ? 1 : 0 });
+  }
+  // алея старих каштанів уздовж центральної алеї
+  for (let z = 48; z > -24; z -= 9) for (const s of [-1, 1]) TREES.push({ x: s * (14.5 + R(-0.5, 0.5)), z: z + R(-1, 1), s: R(0.9, 1.05), k: 0 });
+  // дерева вздовж Сумської (за межами основного ракурсу)
+  for (let x = -330; x <= 330; x += 12) if (Math.abs(x) > 75) TREES.push({ x: x + R(-1, 1), z: 63 + R(-0.4, 0.4), s: R(0.9, 1.1), k: 0 });
+  // далекий ліс на горизонті
+  for (let k = 0; k < 700 * Q.trees; k++) { const a = R(0, TAU), rr = R(190, 330); const x = Math.cos(a) * rr, z = Math.sin(a) * rr - 60; if (z > 54 && z < 110) continue; TREES.push({ x, z, s: R(0.9, 1.4), k: rand() < 0.2 ? 1 : 0, far: 1 }); }
+}
+
+/* ліхтарі: [x, z, тип] 0 — парковий, 1 — вуличний */
+const LAMPS = [];
+for (let z = 54; z >= -24; z -= 12) for (const s of [-1, 1]) LAMPS.push([s * 8.2, z, 0]);
+for (let k = 0; k < 10; k++) { const a = (k + 0.5) / 10 * TAU; const x = FN.x + Math.sin(a) * 18.6, z = FN.z + Math.cos(a) * 18.6; if (Math.abs(x) < 11) continue; LAMPS.push([x, z, 0]); }
+for (let k = 0; k < 14; k++) { const a = (k + 0.5) / 14 * TAU; const x = WH.x + Math.sin(a) * 26.6, z = WH.z + Math.cos(a) * 26.6; if (Math.abs(x) < 10 && z > WH.z) continue; LAMPS.push([x, z, 0]); }
+for (const p of PATHS) { const pts = p.pts; for (let i = 4; i < pts.length - 2; i += 7) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1]; const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, sd = (i % 14 < 7 ? 1 : -1) * (p.w / 2 + 0.7); const x = ax - dz / l * sd, z = az + dx / l * sd; if (PLAZAS.some(([px, pz, r]) => Math.hypot(x - px, z - pz) < r + 2)) continue; LAMPS.push([x, z, 0]); } }
+for (let x = -330; x <= 330; x += 26) LAMPS.push([x + 13, 65.2, 1], [x, 82.8, 1]);
+
+/* ================= «ПОЛЕ СВІТЛА»: тепла підсвітка від ліхтарів, запечена в текстуру ================= */
+const LFS = Q.lf, LFK = { value: 3.4 };
+const LF_TEX = (() => {
+  const c = cnv(LFS), g = c.getContext('2d'), k = LFS / PD;
+  g.fillStyle = '#000'; g.fillRect(0, 0, LFS, LFS); g.globalCompositeOperation = 'lighter';
+  const glow = (x, z, r, col, a) => { const X = (x + PD / 2) * k, Z = (z + PD / 2) * k, rr = Math.max(2, r * k); const gr = g.createRadialGradient(X, Z, 0, X, Z, rr); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(0.3, `rgba(${col},${a * 0.45})`); gr.addColorStop(1, `rgba(${col},0)`); g.fillStyle = gr; g.fillRect(X - rr, Z - rr, rr * 2, rr * 2); };
+  for (const [x, z, t] of LAMPS) glow(x, z, t ? 15 : 10, '255,150,70', t ? 0.42 : 0.5);
+  glow(CAR.x, CAR.z, 19, '255,170,90', 0.75); glow(CAR.x, CAR.z, 9, '255,190,120', 0.5);
+  glow(SW.x, SW.z, 15, '255,200,140', 0.5);
+  for (let x = -24; x <= 24; x += 6) glow(x, GATE_Z + 3, 8, '255,180,110', 0.3);
+  glow(96, -80, 16, '220,220,255', 0.35);
+  return ctex(c, false, false);
+})();
+const LFC = { tLF: { value: LF_TEX } };
+/* підмішує «поле світла» в матеріал: mode — 0 земля, 1 крони, 2 предмети */
+function addLF(m, mode, k = 1) {
+  const prev = m.onBeforeCompile;
+  m.customProgramCacheKey = () => 'lf' + mode + '_' + k + (m.userData.key || '');
+  m.onBeforeCompile = s => {
+    prev(s); s.uniforms.tLF = LFC.tLF; s.uniforms.uLFK = LFK;
+    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vLW; varying vec3 vLN;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vec4 lw4 = vec4(transformed, 1.0); vec3 ln3 = objectNormal;
+        #ifdef USE_INSTANCING
+        lw4 = instanceMatrix * lw4; ln3 = mat3(instanceMatrix) * ln3;
+        #endif
+        vLW = (modelMatrix * lw4).xyz; vLN = normalize(mat3(modelMatrix) * ln3);`);
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D tLF; uniform float uLFK; varying vec3 vLW; varying vec3 vLN;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        {
+          vec3 lf = texture2D(tLF, vec2(0.5 + vLW.x / ${PD.toFixed(1)}, 0.5 - vLW.z / ${PD.toFixed(1)})).rgb;
+          float hf = ${mode === 0 ? '1.0' : mode === 1 ? 'exp(-max(vLW.y - 4.5, 0.0) / 4.5) * (0.55 + 0.45 * max(-vLN.y, 0.0) + 0.3 * length(vLN.xz))' : 'exp(-max(vLW.y - 4.5, 0.0) / 4.0) * (0.6 + 0.4 * length(vLN.xz))'};
+          totalEmissiveRadiance += diffuseColor.rgb * lf * lf * uLFK * hf * ${k.toFixed(2)};
+        }`);
+  };
+  return m;
+}
+
+/* ================= ЗЕМЛЯ: алеї, площі, газони ================= */
+function buildPlan() {
+  const S = Q.plan, k = S / PD, c = cnv(S), g = c.getContext('2d');
+  const X = x => (x + PD / 2) * k, Z = z => (z + PD / 2) * k, M = v => v * k;
+  g.fillStyle = '#1c2616'; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 3600; i++) { g.fillStyle = pick(['rgba(52,66,34,0.35)', 'rgba(22,30,18,0.4)', 'rgba(70,64,34,0.28)', 'rgba(40,50,26,0.35)']); g.beginPath(); g.arc(R(0, S), R(0, S), M(R(1.5, 9)), 0, TAU); g.fill(); }
+  // опале листя під деревами
+  for (const t of TREES) { if (t.far) continue; for (let j = 0; j < 14; j++) { const a = R(0, TAU), rr = Math.sqrt(rand()) * 5.5 * t.s; g.fillStyle = pick(['rgba(150,96,30,0.5)', 'rgba(120,60,22,0.45)', 'rgba(170,120,40,0.4)']); g.fillRect(X(t.x + Math.cos(a) * rr), Z(t.z + Math.sin(a) * rr), Math.max(1, M(0.35)), Math.max(1, M(0.25))); } }
+  // покриття — окремий шар, щоб накласти візерунок плитки лише на нього
+  const pc = cnv(S), p = pc.getContext('2d');
+  const circ = (x, z, r, col) => { p.fillStyle = col; p.beginPath(); p.arc(X(x), Z(z), M(r), 0, TAU); p.fill(); };
+  const rect = (x0, z0, x1, z1, col) => { p.fillStyle = col; p.fillRect(X(x0), Z(z0), M(x1 - x0), M(z1 - z0)); };
+  const stroke = (pts, w, col) => { p.strokeStyle = col; p.lineWidth = M(w); p.lineCap = 'round'; p.lineJoin = 'round'; p.beginPath(); pts.forEach(([x, z], i) => i ? p.lineTo(X(x), Z(z)) : p.moveTo(X(x), Z(z))); p.stroke(); };
+  const PAVE = '#706a62', ALLEY = '#7c766c', EDGE = '#9a958c';
+  for (const pa of PATHS) { stroke(pa.pts, pa.w + 0.5, EDGE); stroke(pa.pts, pa.w, PAVE); }
+  rect(-10, -30, 10, 62, EDGE); rect(-9.4, -30, 9.4, 62, ALLEY);
+  rect(-32, 55, 32, 64, PAVE);
+  circ(FN.x, FN.z, 18, EDGE); circ(FN.x, FN.z, 17.4, ALLEY);
+  circ(WH.x, WH.z, 26, EDGE); circ(WH.x, WH.z, 25.4, ALLEY);
+  circ(CAR.x, CAR.z, 12.5, EDGE); circ(CAR.x, CAR.z, 12, PAVE);
+  circ(SW.x, SW.z, 11.5, EDGE); circ(SW.x, SW.z, 11, PAVE);
+  rect(76, -96, 108, -66, PAVE);
+  // тротуари й Сумська
+  rect(-PD / 2, 62, PD / 2, 68, '#5a5650'); rect(-PD / 2, 80, PD / 2, 88, '#5a5650');
+  rect(-PD / 2, 68, PD / 2, 80, '#2a2b2e');
+  // візерунок плитки — тільки на покритті
+  p.globalCompositeOperation = 'source-atop';
+  p.strokeStyle = 'rgba(30,26,22,0.35)'; p.lineWidth = 1;
+  const st = Math.max(2, M(0.9));
+  for (let x = 0; x < S; x += st) { p.beginPath(); p.moveTo(x, 0); p.lineTo(x, S); p.stroke(); }
+  for (let y = 0; y < S; y += st) { p.beginPath(); p.moveTo(0, y); p.lineTo(S, y); p.stroke(); }
+  // орнамент на площах: концентричні кола з темнішої плитки
+  for (const [cx, cz, rr] of [[FN.x, FN.z, 17], [WH.x, WH.z, 25]]) for (let r = 10; r < rr; r += 3.2) { p.strokeStyle = 'rgba(60,52,44,0.5)'; p.lineWidth = M(0.5); p.beginPath(); p.arc(X(cx), Z(cz), M(r), 0, TAU); p.stroke(); }
+  p.fillStyle = 'rgba(20,20,22,0.0)';
+  p.globalCompositeOperation = 'source-over';
+  // розмітка на Сумській
+  p.setLineDash([M(3), M(5)]); p.strokeStyle = 'rgba(230,226,214,0.6)'; p.lineWidth = Math.max(1, M(0.15)); p.beginPath(); p.moveTo(0, Z(74)); p.lineTo(S, Z(74)); p.stroke(); p.setLineDash([]);
+  for (let x = -6; x < 6; x += 1) rect(x, 68.5, x + 0.5, 79.5, 'rgba(230,226,214,0.55)');
+  g.drawImage(pc, 0, 0);
+  // клумби біля фонтана
+  for (let k2 = 0; k2 < 6; k2++) { const a = k2 / 6 * TAU + 0.52; const x = FN.x + Math.sin(a) * 13.2, z = FN.z + Math.cos(a) * 13.2; if (Math.abs(x) < 4) continue; g.fillStyle = '#26301c'; g.beginPath(); g.arc(X(x), Z(z), M(2.4), 0, TAU); g.fill(); for (let j = 0; j < 60; j++) { const aa = R(0, TAU), r = Math.sqrt(rand()) * 2.2; g.fillStyle = pick(['#c0283a', '#e8b030', '#d8d0c8', '#a03080']); g.fillRect(X(x + Math.cos(aa) * r), Z(z + Math.sin(aa) * r), Math.max(1, M(0.25)), Math.max(1, M(0.25))); } }
+  g.globalAlpha = 0.16; g.globalCompositeOperation = 'overlay'; g.fillStyle = g.createPattern(noiseCanvas, 'repeat'); g.fillRect(0, 0, S, S);
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  return ctex(c, true, false);
+}
+{
+  const tm = std({ map: buildPlan(), roughness: 0.86 }, 0.4);
+  const prev = tm.onBeforeCompile;
+  tm.onBeforeCompile = s => {
+    prev(s); s.uniforms.tDet = { value: NOISET };
+    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vDW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvDW = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D tDet; varying vec2 vDW;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= 0.8 + 0.4 * texture2D(tDet, vDW * 0.5).r * texture2D(tDet, vDW * 0.093 + 0.37).r * 1.6;')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = clamp(roughnessFactor - 0.4 * smoothstep(0.45, 0.72, texture2D(tDet, vDW * 0.027).r), 0.3, 1.0);'); // вологі плями — відблиски вогнів
+  };
+  tm.userData.key = 'ground';
+  addLF(tm, 0, 1.0);
+  const terrain = new THREE.Mesh(new THREE.PlaneGeometry(PD, PD).rotateX(-Math.PI / 2), tm); terrain.receiveShadow = true; scene.add(terrain);
+  const gt = ctex(noiseCanvas); gt.repeat.set(300, 300);
+  const far = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000).rotateX(-Math.PI / 2), std({ color: 0x161c12, map: gt, roughness: 1 }, 0.3)); far.position.y = -0.3; scene.add(far);
+}
+
+/* ================= матеріали ================= */
+const stoneMat = std({ color: 0xe9e1d0, roughness: 0.75, side: THREE.DoubleSide }, 0.6);
+const ironMat = std({ color: 0x1c1f24, metalness: 0.6, roughness: 0.5 });
+const whiteSteel = std({ color: 0xe8ecf2, metalness: 0.35, roughness: 0.4 }, 1.2);
+const brassMat = std({ color: 0xc89a48, metalness: 1, roughness: 0.32 }, 1.4);
+const darkMat = std({ color: 0x2a2826, roughness: 0.85 });
+addLF(ironMat, 2, 1); addLF(darkMat, 2, 1);
+/* колонада підсвічена прожекторами знизу (запечено в матеріал) */
+{
+  const prev = stoneMat.onBeforeCompile;
+  stoneMat.customProgramCacheKey = () => 'gate-stone';
+  stoneMat.onBeforeCompile = s => {
+    prev(s);
+    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGW; varying vec3 vGN;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGW = (modelMatrix * vec4(transformed, 1.0)).xyz; vGN = normalize(mat3(modelMatrix) * objectNormal);');
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vGW; varying vec3 vGN;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        {
+          float front = max(vGN.z, 0.0) * 0.85 + max(-vGN.z, 0.0) * 0.25 + abs(vGN.x) * 0.35 + max(-vGN.y, 0.0) * 0.5;
+          float up = exp(-max(vGW.y - 0.5, 0.0) / 9.0) * 0.8 + 0.2;
+          float pools = 0.75 + 0.35 * pow(max(0.5 + 0.5 * cos(vGW.x * 0.52), 0.0), 3.0);
+          totalEmissiveRadiance += diffuseColor.rgb * vec3(1.0, 0.8, 0.58) * front * up * pools * 0.42;
+        }`);
+  };
+}
+
+/* ================= «ЖИВІ» ВОГНИКИ: одна система для колеса, гірлянд, каруселей =================
+   Кожен вогник — квадратик, повернутий до камери, з яскравим ядром та м’яким ореолом.
+   kind: 0 колесо · 1 гірлянда · 2 карусель · 3 ланцюгова карусель · 4 теплі нерухомі · 5 червоні сигнальні */
+const BULB_VS = `
+uniform float uTime, uPx, uFogD, uGain; uniform vec4 uWM;
+attribute vec3 aC; attribute vec4 aP; attribute vec4 aQ;
+varying vec3 vCol; varying vec2 vQ;
+${GLSL_HSV}
+vec3 bulbCol(){
+  float kind = aP.y, a = aP.z, r = aP.w, seed = aQ.x, hue = aQ.y, sub = aQ.z, t = uTime;
+  if (kind < 0.5) {
+    vec3 c0 = hsv(fract(a / 6.2831853 + r * 0.45 - t * 0.06), 0.88, 1.15);
+    float pul = pow(max(0.5 + 0.5 * sin(r * 15.0 - t * 4.2), 0.0), 5.0);
+    vec3 c1 = mix(vec3(0.06, 0.22, 1.0) * 0.55, vec3(1.0, 0.78, 0.15) * 1.5, pul);
+    float sec = step(0.5, fract(a / 6.2831853 * 4.0 - t * 0.05));
+    vec3 c2 = mix(vec3(0.12, 0.38, 1.0), vec3(1.0, 0.8, 0.1), sec) * (0.8 + 0.2 * sin(t * 3.0 + seed * 40.0));
+    float tw = pow(clamp(h11(floor(t * 8.0 + seed * 13.0) + seed * 91.0), 0.0, 1.0), 7.0);
+    vec3 c3 = vec3(1.0, 0.94, 0.82) * (0.22 + 1.8 * tw);
+    vec3 c = c0 * uWM.x + c1 * uWM.y + c2 * uWM.z + c3 * uWM.w;
+    if (sub > 1.5) c = mix(c, vec3(1.0, 0.85, 0.6), 0.5);
+    return c;
+  }
+  if (kind < 1.5) return hsv(hue, 0.72, 1.0) * (0.6 + 0.4 * sin(t * (1.2 + 2.2 * seed) + seed * 50.0));
+  if (kind < 2.5) return vec3(1.0, 0.7, 0.36) * (0.45 + 0.55 * step(0.5, fract(a / 6.2831853 * 18.0 - t * 1.1 + sub * 0.37)));
+  if (kind < 3.5) { float ch = pow(max(0.5 + 0.5 * sin(a * 6.0 - t * 4.5 + r * 2.0), 0.0), 3.0); return mix(vec3(1.0, 0.62, 0.25) * 0.45, hsv(fract(hue + t * 0.04), 0.8, 1.3), ch); }
+  if (kind < 4.5) return vec3(1.0, 0.76, 0.48) * (0.88 + 0.12 * sin(t * 2.0 + seed * 30.0));
+  return vec3(1.0, 0.07, 0.03) * (0.15 + 1.5 * step(0.0, sin(t * 2.4 + seed * 3.0)));
+}
+void main(){
+  vec4 mv = modelViewMatrix * vec4(aC, 1.0);
+  float s = aP.x, px = -mv.z * uPx * 1.7, S = max(s, px), e = (s / S) * (s / S);
+  float fz = uFogD * max(-mv.z, 0.0); vCol = max(bulbCol(), vec3(0.0)) * e * uGain * exp(-fz * fz);
+  vQ = position.xy * 2.0;
+  mv.xy += position.xy * S * 6.0;
+  gl_Position = projectionMatrix * mv;
+}`;
+const BULB_FS = `varying vec3 vCol; varying vec2 vQ;
+void main(){ float r = length(vQ); if (r > 1.0) discard;
+  float core = smoothstep(0.2, 0.11, r), halo = exp(-r * r * 10.0) * (1.0 - r);
+  gl_FragColor = vec4(vCol * (core * 2.4 + halo * 0.55), 1.0); }`;
+function bulbMesh(list, gain = 1) {
+  const n = list.length, aC = new Float32Array(n * 3), aP = new Float32Array(n * 4), aQ = new Float32Array(n * 4);
+  list.forEach((b, i) => { aC.set([b.x, b.y, b.z], i * 3); aP.set([b.s ?? 0.1, b.k, b.a ?? 0, b.r ?? 0], i * 4); aQ.set([b.seed ?? rand(), b.h ?? 0, b.sub ?? 0, 0], i * 4); });
+  const base = new THREE.PlaneGeometry(1, 1), g = new THREE.InstancedBufferGeometry();
+  g.index = base.index; g.setAttribute('position', base.attributes.position);
+  g.setAttribute('aC', new THREE.InstancedBufferAttribute(aC, 3)); g.setAttribute('aP', new THREE.InstancedBufferAttribute(aP, 4)); g.setAttribute('aQ', new THREE.InstancedBufferAttribute(aQ, 4));
+  g.instanceCount = n;
+  const m = new THREE.ShaderMaterial({ uniforms: { uTime: TIME, uPx: PXU, uFogD: FOGD, uGain: { value: gain }, uWM: WMU }, vertexShader: BULB_VS, fragmentShader: BULB_FS, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mesh = new THREE.Mesh(g, m); mesh.frustumCulled = false; mesh.renderOrder = 5; return mesh;
+}
+const GARL_H = [0.0, 0.08, 0.14, 0.33, 0.58, 0.8, 0.93];
+function garland(list, A, B, sag, step = 0.55, kind = 1) {
+  const L = A.distanceTo(B), n = Math.max(2, Math.round(L / step));
+  for (let i = 1; i < n; i++) { const u = i / n; list.push({ x: lerp(A.x, B.x, u), y: lerp(A.y, B.y, u) - sag * 4 * u * (1 - u), z: lerp(A.z, B.z, u), s: 0.07, k: kind, h: GARL_H[(i + list.length) % GARL_H.length] }); }
+}
+
+/* ================= ГОЛОВНИЙ ВХІД: колонада з аркою ================= */
+const SIGN = {};
+{
+  const ST = [], DK = [], BL = [];
+  const Z0 = GATE_Z;
+  // пілони центральної арки
+  for (const s of [-1, 1]) {
+    const cx = s * 6.4;
+    ST.push(boxG(cx, 0, Z0, 3.4, 1.2, 4.8), boxG(cx, 1.2, Z0, 2.8, 10.2, 4.2), boxG(cx, 11.4, Z0, 3.4, 0.55, 4.8));
+    for (const zz of [-1, 1]) for (const xx of [-0.95, 0.95]) ST.push(boxG(cx + xx, 1.2, Z0 + zz * 2.12, 0.5, 9.6, 0.18));   // пілястри
+    // ваза на пілоні
+    const vase = new THREE.LatheGeometry([[0.5, 0], [0.5, 0.15], [0.22, 0.3], [0.2, 0.5], [0.62, 0.9], [0.7, 1.2], [0.6, 1.3], [0, 1.3]].map(([x, y]) => new THREE.Vector2(x, y)), 18);
+    ST.push(clean(vase.translate(cx, 11.95, Z0)));
+    BL.push({ x: cx + 1.45 * s, y: 7.0, z: Z0 + 2.7, s: 0.16, k: 4 }, { x: cx - 1.45 * s, y: 7.0, z: Z0 + 2.7, s: 0.16, k: 4 });
+  }
+  // аттик з написом і арка
+  ST.push(boxG(0, 8.8, Z0, 10.0, 2.6, 3.6), boxG(0, 11.4, Z0, 16.2, 0.5, 4.4));
+  {
+    const sh = new THREE.Shape(); sh.moveTo(-5, 8.8); sh.lineTo(5, 8.8); sh.lineTo(5, 5.6); sh.absellipse(0, 5.6, 5, 2.6, 0, Math.PI, false); sh.lineTo(-5, 8.8);
+    const ag = new THREE.ExtrudeGeometry(sh, { depth: 3.0, bevelEnabled: false, curveSegments: 28 }).translate(0, 0, Z0 - 1.5);
+    ST.push(clean(ag));
+  }
+  // бічні колонади
+  const colG = new THREE.LatheGeometry([[0.62, 0], [0.62, 0.22], [0.5, 0.3], [0.46, 0.42], [0.44, 3.4], [0.4, 6.4], [0.44, 6.5], [0.58, 6.7], [0.64, 6.85], [0.64, 7.0], [0, 7.0]].map(([x, y]) => new THREE.Vector2(x, y)), 16);
+  for (const s of [-1, 1]) {
+    ST.push(boxG(s * 16.4, 0, Z0, 17.6, 0.6, 5.4));                                      // стилобат
+    for (let i = 0; i < 7; i++) { const x = s * (9.4 + i * 2.33); for (const zz of [1.7, -1.7]) ST.push(clean(colG.clone().translate(x, 0.6, Z0 + zz))); }
+    ST.push(boxG(s * 16.4, 7.6, Z0, 17.2, 1.1, 4.6), boxG(s * 16.4, 8.7, Z0, 17.8, 0.38, 5.2), boxG(s * 16.4, 9.08, Z0, 16.6, 0.5, 4.2));   // антаблемент
+    ST.push(boxG(s * 26.4, 0, Z0, 3.6, 9.6, 5.6), boxG(s * 26.4, 9.6, Z0, 4.2, 0.5, 6.2));                  // торцеві павільйони
+    for (let i = 0; i < 7; i++) BL.push({ x: s * (9.4 + i * 2.33), y: 7.85, z: Z0 + 2.45, s: 0.09, k: 4 });
+    // гірлянда між колонами
+    for (let i = 0; i < 6; i++) garland(BL, V3(s * (9.4 + i * 2.33), 7.4, Z0 + 2.3), V3(s * (9.4 + (i + 1) * 2.33), 7.4, Z0 + 2.3), 0.9, 0.42);
+  }
+  // кована огорожа вздовж Сумської
+  const posts = [];
+  for (const s of [-1, 1]) {
+    for (let x = 28.5; x < 330; x += 2.6) posts.push(boxG(s * x, 0, Z0 + 1.5, 0.08, 1.9, 0.08));
+    for (let x = 28.5; x < 330; x += 12) posts.push(boxG(s * x, 0, Z0 + 1.5, 0.5, 2.3, 0.5));
+    posts.push(boxG(s * 179, 1.75, Z0 + 1.5, 301, 0.07, 0.07), boxG(s * 179, 0.35, Z0 + 1.5, 301, 0.07, 0.07));
+  }
+  for (const gg of ST) planarUV(gg);
+  const gm = new THREE.Mesh(mergeGeometries(ST.map(g => clean(g))), stoneMat); gm.castShadow = gm.receiveShadow = true; scene.add(gm);
+  scene.add(new THREE.Mesh(mergeGeometries(posts), ironMat));
+  scene.add(bulbMesh(BL, 1.0));
+  // табличка з назвою
+  SIGN.c = cnv(2048, 256); SIGN.t = ctex(SIGN.c, true, false);
+  const sm = new THREE.Mesh(new THREE.PlaneGeometry(9.4, 1.18), basic({ map: SIGN.t, transparent: true, color: hdr('#ffffff', 1.0) }));
+  sm.position.set(0, 10.1, Z0 + 1.82); scene.add(sm);
+  // світлі прожектори на тротуарі перед колонадою
+  const fl = new THREE.InstancedMesh(boxG(0, 0, 0, 0.5, 0.22, 0.4), darkMat, 14), o = new THREE.Object3D();
+  for (let i = 0; i < 14; i++) { o.position.set(-26 + i * 4, 0, Z0 + 3.4); o.updateMatrix(); fl.setMatrixAt(i, o.matrix); }
+  scene.add(fl);
+}
+function drawSign() {
+  const c = SIGN.c, g = c.getContext('2d'), W = c.width, H = c.height;
+  g.clearRect(0, 0, W, H);
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '800 150px Unbounded, Arial Black, sans-serif';
+  if ('letterSpacing' in g) g.letterSpacing = '14px';
+  let w = g.measureText('ПАРК ГОРЬКОГО').width; const sc = Math.min(1, (W - 80) / w);
+  g.save(); g.translate(W / 2, H / 2 + 6); g.scale(sc, 1);
+  g.shadowColor = 'rgba(255,190,80,0.9)'; g.shadowBlur = 26;
+  const gr = g.createLinearGradient(0, -70, 0, 70); gr.addColorStop(0, '#fff4cc'); gr.addColorStop(0.55, '#ffd36a'); gr.addColorStop(1, '#e8a23a');
+  g.fillStyle = gr; g.fillText('ПАРК ГОРЬКОГО', 0, 0); g.shadowBlur = 0; g.fillText('ПАРК ГОРЬКОГО', 0, 0);
+  g.restore();
+  SIGN.t.needsUpdate = true;
+}
+const fontsReady = (document.fonts && document.fonts.load ? document.fonts.load('800 150px Unbounded', 'ПАРК').catch(() => {}) : Promise.resolve()).then(() => (document.fonts && document.fonts.ready) || null).catch(() => {});
+drawSign(); fontsReady.then(drawSign);
+
+/* ================= ЛІХТАРІ, ЛАВИ, ГІРЛЯНДИ ================= */
+{
+  const pPole = mergeGeometries([new THREE.CylinderGeometry(0.16, 0.2, 0.5, 8).translate(0, 0.25, 0), new THREE.CylinderGeometry(0.06, 0.09, 4.0, 8).translate(0, 2.4, 0), new THREE.CylinderGeometry(0.16, 0.08, 0.16, 8).translate(0, 4.42, 0)].map(g => clean(g)));
+  const pHead = clean(new THREE.SphereGeometry(0.27, 16, 12).translate(0, 4.75, 0));
+  const sPole = mergeGeometries([new THREE.CylinderGeometry(0.09, 0.15, 9, 8).translate(0, 4.5, 0), new THREE.BoxGeometry(0.09, 0.09, 1.8).translate(0, 8.95, 0.8)].map(g => clean(g)));
+  const sHead = clean(new THREE.BoxGeometry(0.4, 0.14, 0.7).translate(0, 8.85, 1.7));
+  const headMat = basic({ color: hdr('#ffd7a0', 2.1) });
+  const o = new THREE.Object3D();
+  for (const [ty, pg, hg] of [[0, pPole, pHead], [1, sPole, sHead]]) {
+    const list = LAMPS.filter(l => l[2] === ty);
+    const poles = new THREE.InstancedMesh(pg, ironMat, list.length), heads = new THREE.InstancedMesh(hg, headMat, list.length);
+    list.forEach(([x, z], i) => { o.position.set(x, 0, z); o.rotation.set(0, ty ? (z < 74 ? Math.PI : 0) : 0, 0); o.updateMatrix(); poles.setMatrixAt(i, o.matrix); heads.setMatrixAt(i, o.matrix); });
+    poles.castShadow = true; scene.add(poles, heads);
+  }
+  // гірлянди: уздовж алеї між ліхтарями й навскіс над нею
+  const GL = [];
+  const alley = LAMPS.filter(l => l[2] === 0 && Math.abs(Math.abs(l[0]) - 8.2) < 0.01).sort((a, b) => b[1] - a[1]);
+  for (const s of [-1, 1]) { const side = alley.filter(l => Math.sign(l[0]) === s); for (let i = 0; i < side.length - 1; i++) garland(GL, V3(side[i][0], 4.3, side[i][1]), V3(side[i + 1][0], 4.3, side[i + 1][1]), 0.8); }
+  const L = alley.filter(l => l[0] < 0), Rr = alley.filter(l => l[0] > 0);
+  for (let i = 0; i < Math.min(L.length, Rr.length); i++) { garland(GL, V3(L[i][0], 4.4, L[i][1]), V3(Rr[i][0], 4.4, Rr[i][1]), 1.3, 0.6); if (i + 1 < Rr.length) garland(GL, V3(L[i][0], 4.4, L[i][1]), V3(Rr[i + 1][0], 4.4, Rr[i + 1][1]), 1.5, 0.6); }
+  scene.add(bulbMesh(GL, 1.0));
+  // лави вздовж алеї
+  const BEN = []; for (let z = 48; z > -20; z -= 12) for (const s of [-1, 1]) BEN.push([s * 9.0, z, s > 0 ? -Math.PI / 2 : Math.PI / 2]);
+  for (let k = 0; k < 12; k++) { const a = (k + 0.25) / 12 * TAU; const x = FN.x + Math.sin(a) * 16.4, z = FN.z + Math.cos(a) * 16.4; if (Math.abs(x) < 10) continue; BEN.push([x, z, a + Math.PI]); }
+  const wood = mergeGeometries([new THREE.BoxGeometry(1.9, 0.07, 0.48).translate(0, 0.46, 0), new THREE.BoxGeometry(1.9, 0.36, 0.05).rotateX(-0.2).translate(0, 0.78, -0.24), new THREE.BoxGeometry(0.07, 0.46, 0.5).translate(0.8, 0.23, 0), new THREE.BoxGeometry(0.07, 0.46, 0.5).translate(-0.8, 0.23, 0)].map(q => clean(q)));
+  const bm = std({ color: 0x5a3a22, roughness: 0.7 }); addLF(bm, 2, 1);
+  const wm = new THREE.InstancedMesh(wood, bm, BEN.length);
+  BEN.forEach(([x, z, a], i) => { o.position.set(x, 0, z); o.rotation.set(0, a, 0); o.updateMatrix(); wm.setMatrixAt(i, o.matrix); });
+  wm.castShadow = wm.receiveShadow = true; scene.add(wm);
+}
+
+/* ================= ФОНТАН ================= */
+const FCOL = { value: new THREE.Color('#3a7bff') };
+const fountain = new THREE.Group(); fountain.position.set(FN.x, 0, FN.z); scene.add(fountain);
+{
+  const V2 = (x, y) => new THREE.Vector2(x, y);
+  const parts = [
+    new THREE.LatheGeometry([V2(8.0, 0.3), V2(8.0, 0.82), V2(8.9, 0.82), V2(9.05, 0.7), V2(9.05, 0.0)], 72),
+    new THREE.CylinderGeometry(1.0, 1.3, 1.6, 20).translate(0, 0.8, 0),
+    new THREE.LatheGeometry([V2(0.6, 1.6), V2(1.4, 1.75), V2(2.8, 2.05), V2(3.0, 2.25), V2(2.9, 2.3), V2(0, 2.1)], 40),
+    new THREE.CylinderGeometry(0.35, 0.5, 0.8, 14).translate(0, 2.4, 0),
+  ];
+  const fm = new THREE.Mesh(mergeGeometries(parts.map(g => clean(g))), stoneMat); fm.castShadow = true; fm.receiveShadow = true; fountain.add(fm);
+  // вода — темне дзеркало з кольоровим сяйвом від підводних вогнів
+  const wmat = std({ color: 0x0a1424, roughness: 0.2, metalness: 0.2 }, 2.0);
+  const prev = wmat.onBeforeCompile;
+  wmat.customProgramCacheKey = () => 'water';
+  wmat.onBeforeCompile = s => {
+    prev(s); s.uniforms.uFC = FCOL; s.uniforms.uTime = TIME;
+    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uFC; uniform float uTime; varying vec3 vWW;\n' + GLSL_N3)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        { vec2 q = vWW.xz * 1.3; float e = 0.15; float h0 = n3(vec3(q, uTime * 0.9)); float hx = n3(vec3(q + vec2(e, 0.0), uTime * 0.9)); float hz = n3(vec3(q + vec2(0.0, e), uTime * 0.9));
+          normal = normalize(normal + (vec3(h0 - hx, 0.0, h0 - hz) * 0.9) * mat3(viewMatrix)); }`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        { float r = length(vWW.xz - vec2(${FN.x.toFixed(1)}, ${FN.z.toFixed(1)}));
+          float ring = exp(-pow((r - 6.3) * 1.4, 2.0)) + 0.6 * exp(-pow((r - 2.4) * 1.2, 2.0)) + 0.25 * smoothstep(8.0, 7.2, r);
+          totalEmissiveRadiance += uFC * ring * (0.24 + 0.12 * n3(vec3(vWW.xz * 2.0, uTime * 1.5))); }`);
+  };
+  const water = new THREE.Mesh(new THREE.CircleGeometry(8.0, 72).rotateX(-Math.PI / 2), wmat); water.position.y = 0.62; water.receiveShadow = true; fountain.add(water);
+  const bowlW = new THREE.Mesh(new THREE.CircleGeometry(2.85, 40).rotateX(-Math.PI / 2), wmat); bowlW.position.y = 2.2; fountain.add(bowlW);
+}
+// струмені — частинки, що летять по параболах
+const fountainPts = (() => {
+  const N = Q.fount, aJ = new Float32Array(N * 4), pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) { const ty = i < N * 0.62 ? 0 : i < N * 0.86 ? 1 : 2; aJ.set([ty, ty === 0 ? Math.floor(rand() * 16) / 16 * TAU : rand() * TAU, rand(), rand()], i * 4); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aJ', new THREE.BufferAttribute(aJ, 4));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uTime: TIME, uPS: PSU, uFC: FCOL, uK: { value: 1 }, uFogD: FOGD },
+    vertexShader: `uniform float uTime, uPS, uK, uFogD; uniform vec3 uFC; attribute vec4 aJ; varying vec3 vC;
+      void main(){
+        float ty = aJ.x, a = aJ.y, ph = aJ.z, rn = aJ.w;
+        vec3 o; vec3 vh; float vy, y1;
+        if (ty < 0.5) { o = vec3(cos(a) * 6.3, 0.75, sin(a) * 6.3); float sp = 0.03 * (fract(rn * 17.0) - 0.5); vh = -vec3(cos(a + sp), 0.0, sin(a + sp)) * (2.9 + 0.3 * rn); vy = 6.0 * uK * (0.96 + 0.08 * fract(rn * 7.0)); y1 = 0.65; }
+        else if (ty < 1.5) { o = vec3(0.0, 2.85, 0.0); float sp = 0.5 * fract(rn * 13.0); vh = vec3(cos(a), 0.0, sin(a)) * sp; vy = (10.0 + 0.8 * fract(rn * 5.0)) * uK; y1 = 2.25; }
+        else { o = vec3(0.0, 2.6, 0.0); vh = vec3(cos(a), 0.0, sin(a)) * (1.9 + 0.3 * rn); vy = 2.2 + 0.6 * fract(rn * 3.0); y1 = 0.65; }
+        float life = (vy + sqrt(max(vy * vy + 19.6 * (o.y - y1), 0.0))) / 9.8;
+        float t = fract(uTime / life + ph) * life;
+        vec3 p = o + vh * t + vec3(0.0, vy * t - 4.9 * t * t, 0.0);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        float b = (0.55 + 0.45 * rn) * smoothstep(0.0, 0.08, t) * (1.0 - 0.5 * smoothstep(life * 0.6, life, t));
+        vec3 base = mix(vec3(0.75, 0.85, 1.0), uFC, 0.55 + 0.3 * smoothstep(0.0, 4.0, p.y));
+        float fz = uFogD * max(-mv.z, 0.0); vC = base * max(b, 0.0) * 0.24 * exp(-fz * fz);
+        gl_PointSize = clamp(uPS * 0.11 / max(1.0, -mv.z), 1.0, 22.0);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `varying vec3 vC; void main(){ vec2 q = gl_PointCoord - 0.5; float r2 = dot(q, q) * 4.0; if (r2 > 1.0) discard; gl_FragColor = vec4(vC * (1.0 - r2), 1.0); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  const p = new THREE.Points(g, m); p.frustumCulled = false; p.renderOrder = 4; fountain.add(p); return p;
+})();
+const fountLight = new THREE.PointLight(0x3a7bff, 90, 30, 2); fountLight.position.set(FN.x, 3.5, FN.z); scene.add(fountLight);
+
+/* ================= КОЛЕСО ОГЛЯДУ ================= */
+const NG = 24, RP = WH.R + 0.45, HANG = 2.6;
+const wheelG = new THREE.Group(); wheelG.position.set(WH.x, WH.y, WH.z); wheelG.rotation.y = WH.ry; scene.add(wheelG);
+const wheelR = new THREE.Group(); wheelG.add(wheelR);
+const WRIM = 1.75;
+{
+  const RW = [], SUP = [];
+  for (const zs of [-WRIM, WRIM]) {
+    RW.push(clean(new THREE.TorusGeometry(WH.R, 0.24, 6, 180).translate(0, 0, zs)));
+    RW.push(clean(new THREE.TorusGeometry(WH.R - 1.1, 0.12, 5, 160).translate(0, 0, zs)));
+    RW.push(clean(new THREE.TorusGeometry(WH.R * 0.58, 0.13, 5, 120).translate(0, 0, zs)));
+    RW.push(clean(new THREE.TorusGeometry(2.3, 0.32, 6, 32).translate(0, 0, zs * 0.75)));
+    for (let i = 0; i < NG; i++) {
+      const a = i / NG * TAU;
+      for (const d of [-0.12, 0.12]) {
+        const A = V3(Math.cos(a + d * 3) * 2.3, Math.sin(a + d * 3) * 2.3, zs * 0.75), B = V3(Math.cos(a + d) * WH.R, Math.sin(a + d) * WH.R, zs);
+        RW.push(tube(A, B, 0.075, 0.075, 4));
+      }
+      // зигзаг між зовнішніми ободами (ферма)
+      const a2 = (i + 0.5) / NG * TAU;
+      RW.push(tube(V3(Math.cos(a) * WH.R, Math.sin(a) * WH.R, zs), V3(Math.cos(a2) * (WH.R - 1.1), Math.sin(a2) * (WH.R - 1.1), zs), 0.06, 0.06, 4));
+      RW.push(tube(V3(Math.cos(a2) * (WH.R - 1.1), Math.sin(a2) * (WH.R - 1.1), zs), V3(Math.cos(a + TAU / NG) * WH.R, Math.sin(a + TAU / NG) * WH.R, zs), 0.06, 0.06, 4));
+    }
+  }
+  for (let i = 0; i < NG; i++) { const a = i / NG * TAU; RW.push(tube(V3(Math.cos(a) * RP, Math.sin(a) * RP, -WRIM - 0.1), V3(Math.cos(a) * RP, Math.sin(a) * RP, WRIM + 0.1), 0.12, 0.12, 6)); RW.push(tube(V3(Math.cos(a) * WH.R, Math.sin(a) * WH.R, 0), V3(Math.cos(a) * RP, Math.sin(a) * RP, 0), 0.08, 0.08, 4)); }
+  RW.push(clean(new THREE.CylinderGeometry(1.5, 1.5, 3.6, 24).rotateX(Math.PI / 2)));
+  const wm = new THREE.Mesh(mergeGeometries(RW), whiteSteel); wheelR.add(wm);
+  // опори: дві А-подібні ферми
+  const H = WH.y;
+  for (const zs of [-1, 1]) {
+    const top = V3(0, 0, zs * 3.0);
+    for (const xs of [-1, 1]) {
+      const foot = V3(xs * 15, -H, zs * 7.2);
+      SUP.push(tube(foot, top, 0.75, 0.42, 10));
+      SUP.push(boxG(foot.x, -H, foot.z, 2.4, 0.6, 2.4));
+    }
+    for (const y of [-21, -10]) { const k = -y / H; SUP.push(tube(V3(-15 * k, y, zs * (3 + 4.2 * k)), V3(15 * k, y, zs * (3 + 4.2 * k)), 0.26, 0.26, 6)); }
+    SUP.push(tube(V3(-15, -H + 0.5, zs * 7.2), V3(7.5, -15.5, zs * 5.1), 0.18, 0.18, 6), tube(V3(15, -H + 0.5, zs * 7.2), V3(-7.5, -15.5, zs * 5.1), 0.18, 0.18, 6));
+  }
+  for (const xs of [-1, 1]) SUP.push(tube(V3(xs * 15, -H + 0.5, -7.2), V3(xs * 15, -H + 0.5, 7.2), 0.3, 0.3, 6));
+  SUP.push(clean(new THREE.CylinderGeometry(0.7, 0.7, 7.4, 16).rotateX(Math.PI / 2)));
+  // посадкова платформа і павільйон каси
+  SUP.push(boxG(0, -H, -RP * 0 + 0, 10, 1.5, 6.5), boxG(0, -H, 4.6, 4, 0.75, 3));
+  const sm = new THREE.Mesh(mergeGeometries(SUP), whiteSteel); sm.castShadow = true; sm.receiveShadow = true; wheelG.add(sm);
+  const deck = new THREE.Mesh(boxG(0, -H + 1.5, 0, 10.2, 0.12, 6.7), darkMat); wheelG.add(deck);
+  // вогники колеса: спиці, ободи, маточина
+  const WB = [];
+  for (const zs of [-WRIM, WRIM]) {
+    for (let i = 0; i < NG; i++) for (const d of [-0.12, 0.12]) {
+      const a0 = i / NG * TAU, A = V3(Math.cos(a0 + d * 3) * 2.3, Math.sin(a0 + d * 3) * 2.3, zs * 0.75), B = V3(Math.cos(a0 + d) * WH.R, Math.sin(a0 + d) * WH.R, zs);
+      const n = 19; for (let j = 4; j < n; j++) { const u = j / n, p = A.clone().lerp(B, u); WB.push({ x: p.x, y: p.y, z: p.z, s: 0.12, k: 0, a: Math.atan2(p.y, p.x), r: Math.hypot(p.x, p.y) / WH.R, sub: 0 }); }
+    }
+    const nr = 300; for (let j = 0; j < nr; j++) { const a = j / nr * TAU; WB.push({ x: Math.cos(a) * WH.R, y: Math.sin(a) * WH.R, z: zs + Math.sign(zs) * 0.26, s: 0.15, k: 0, a, r: 1, sub: 1 }); }
+    const ni = 130; for (let j = 0; j < ni; j++) { const a = j / ni * TAU; WB.push({ x: Math.cos(a) * WH.R * 0.58, y: Math.sin(a) * WH.R * 0.58, z: zs + Math.sign(zs) * 0.15, s: 0.12, k: 0, a, r: 0.58, sub: 1 }); }
+    for (let j = 0; j < 16; j++) { const a = j / 16 * TAU; WB.push({ x: Math.cos(a) * 2.3, y: Math.sin(a) * 2.3, z: zs * 0.75 + Math.sign(zs) * 0.34, s: 0.09, k: 0, a, r: 0.09, sub: 2 }); }
+  }
+  wheelR.add(bulbMesh(WB, 2.2));
+  // теплі контурні вогні на опорах
+  const SB = [];
+  for (const zs of [-1, 1]) for (const xs of [-1, 1]) { const foot = V3(xs * 15, -H, zs * 7.2), top = V3(0, 0, zs * 3.0); for (let j = 1; j < 26; j++) { const p = foot.clone().lerp(top, j / 27); SB.push({ x: p.x, y: p.y, z: p.z + zs * 0.5, s: 0.08, k: 4 }); } }
+  for (let j = 0; j < 12; j++) SB.push({ x: -4.8 + j * 0.87, y: -H + 1.6, z: 3.3, s: 0.08, k: 4 });
+  wheelG.add(bulbMesh(SB, 0.8));
+}
+// кабінки — завжди висять вертикально
+const GOND = (() => {
+  const body = mergeGeometries([new THREE.BoxGeometry(2.2, 0.9, 1.9).translate(0, -0.85, 0), new THREE.BoxGeometry(2.3, 0.22, 2.0).translate(0, 0.9, 0), new THREE.CylinderGeometry(0.5, 1.05, 0.35, 12).translate(0, 1.15, 0)].map(g => clean(g)));
+  const glass = clean(new THREE.BoxGeometry(2.12, 1.38, 1.84).translate(0, 0.2, 0));
+  const frame = mergeGeometries([[-1.06, -0.92], [1.06, -0.92], [-1.06, 0.92], [1.06, 0.92]].map(([x, z]) => new THREE.BoxGeometry(0.09, 1.4, 0.09).translate(x, 0.2, z)).concat([new THREE.CylinderGeometry(0.06, 0.06, HANG - 1.3, 6).translate(0, 1.3 + (HANG - 1.3) / 2, 0)]).map(g => clean(g)));
+  const bm = std({ roughness: 0.35, metalness: 0.3 }, 1.2);
+  const gm = basic({ color: 0xffffff, transparent: true, opacity: 0.9 });
+  const B = new THREE.InstancedMesh(body, bm, NG), G = new THREE.InstancedMesh(glass, gm, NG), F = new THREE.InstancedMesh(frame, whiteSteel, NG);
+  const cols = ['#e6302a', '#f7b500', '#2c6cf0', '#22a85a', '#ff7a1a', '#8a3cd8', '#14b7c7', '#e83f8c'], c = new THREE.Color();
+  for (let i = 0; i < NG; i++) { B.setColorAt(i, c.set(cols[i % cols.length])); const warm = rand() < 0.8; G.setColorAt(i, warm ? c.setRGB(1.0, 0.72, 0.42).multiplyScalar(R(0.7, 1.15)) : c.setRGB(0.5, 0.7, 1.0)); }
+  for (const m of [B, G, F]) { m.frustumCulled = false; wheelG.add(m); }
+  return { B, G, F, sw: Array.from({ length: NG }, () => R(0, 10)) };
+})();
+const wheelLight = new THREE.PointLight(0xffffff, 700, 80, 2); wheelLight.position.set(WH.x + 4, 10, WH.z + 24); scene.add(wheelLight);
+const _o = new THREE.Object3D();
+function updateWheel(rot) {
+  for (let i = 0; i < NG; i++) {
+    const a = i / NG * TAU + rot, sway = reduceMotion ? 0 : 0.035 * Math.sin(TIME.value * 0.9 + GOND.sw[i]);
+    _o.position.set(Math.cos(a) * RP, Math.sin(a) * RP - HANG + 0.0, 0); _o.rotation.set(0, 0, sway);
+    // точка підвісу вгорі, тож кабінка гойдається навколо неї
+    _o.position.x += Math.sin(sway) * HANG; _o.position.y += HANG * (1 - Math.cos(sway));
+    _o.position.y -= 0.0; _o.updateMatrix();
+    GOND.B.setMatrixAt(i, _o.matrix); GOND.G.setMatrixAt(i, _o.matrix); GOND.F.setMatrixAt(i, _o.matrix);
+  }
+  GOND.B.instanceMatrix.needsUpdate = GOND.G.instanceMatrix.needsUpdate = GOND.F.instanceMatrix.needsUpdate = true;
+}
+
+/* ================= КАРУСЕЛЬ З КОНИКАМИ ================= */
+const carG = new THREE.Group(); carG.position.set(CAR.x, 0, CAR.z); scene.add(carG);
+const carRot = new THREE.Group(); carG.add(carRot);
+const HORSES = [];
+{
+  const base = [new THREE.CylinderGeometry(8.4, 8.6, 0.45, 48).translate(0, 0.225, 0), new THREE.CylinderGeometry(8.9, 9.0, 0.2, 48).translate(0, 0.1, 0)];
+  const bm = new THREE.Mesh(mergeGeometries(base.map(g => clean(g))), stoneMat); bm.receiveShadow = true; carG.add(bm);
+  const deck = new THREE.Mesh(clean(new THREE.CylinderGeometry(7.8, 7.8, 0.25, 48).translate(0, 0.58, 0)), std({ color: 0x7a3a22, roughness: 0.6 }));
+  carRot.add(deck);
+  const roofT = stripeTex(['#c8202a', '#f3e6c8'], 24, 1024, 128, (g, w, h) => { g.fillStyle = '#d8a640'; g.fillRect(0, h - 10, w, 10); });
+  const roofM = std({ map: roofT, roughness: 0.55, side: THREE.DoubleSide, emissive: 0xffffff, emissiveMap: roofT, emissiveIntensity: 0.18 });
+  const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 8.4, 2.6, 48, 1, true).translate(0, 6.3, 0), roofM); carRot.add(roof);
+  const valT = (() => { const c = cnv(1024, 128), g = c.getContext('2d'); g.fillStyle = '#e8c36a'; g.fillRect(0, 0, 1024, 70); g.fillStyle = '#b8202a'; g.fillRect(0, 20, 1024, 32); for (let x = 0; x < 1024; x += 42.67) { g.fillStyle = '#e8c36a'; g.beginPath(); g.arc(x + 21.3, 70, 21.3, 0, Math.PI); g.fill(); } for (let x = 0; x < 1024; x += 42.67) { g.fillStyle = '#fff2c8'; g.beginPath(); g.arc(x + 21.3, 36, 7, 0, TAU); g.fill(); } return ctex(c); })();
+  const valM = std({ map: valT, alphaTest: 0.5, transparent: false, side: THREE.DoubleSide, roughness: 0.5, emissive: 0xffffff, emissiveMap: valT, emissiveIntensity: 0.3 });
+  { const c = valT.image.getContext('2d'); const d = c.getImageData(0, 0, 1024, 128); for (let i = 0; i < d.data.length; i += 4) if (d.data[i] + d.data[i + 1] + d.data[i + 2] === 0) d.data[i + 3] = 0; c.putImageData(d, 0, 0); valT.needsUpdate = true; }
+  const val = new THREE.Mesh(new THREE.CylinderGeometry(8.42, 8.42, 1.1, 64, 1, true).translate(0, 4.45, 0), valM); carRot.add(val);
+  const col = new THREE.Mesh(clean(new THREE.CylinderGeometry(1.5, 1.5, 4.4, 16).translate(0, 2.9, 0)), std({ color: 0xf2e0b8, roughness: 0.35, metalness: 0.2, emissive: 0xffc070, emissiveIntensity: 0.35 })); carRot.add(col);
+  const fin = mergeGeometries([new THREE.SphereGeometry(0.45, 14, 10).translate(0, 7.8, 0), new THREE.ConeGeometry(0.16, 1.1, 8).translate(0, 8.7, 0)].map(g => clean(g)));
+  carRot.add(new THREE.Mesh(fin, brassMat));
+  const poles = [];
+  for (const [rr, n, ph] of [[6.4, 12, 0], [4.4, 12, 0.5]]) for (let i = 0; i < n; i++) { const a = (i + ph) / n * TAU; poles.push(clean(new THREE.CylinderGeometry(0.045, 0.045, 4.3, 6).translate(Math.cos(a) * rr, 2.85, Math.sin(a) * rr))); HORSES.push({ a, rr, ph: rand() * TAU }); }
+  carRot.add(new THREE.Mesh(mergeGeometries(poles), brassMat));
+  // коник: тулуб, шия, голова, ноги в стрибку, хвіст
+  const hg = mergeGeometries([
+    new THREE.CapsuleGeometry(0.27, 0.8, 4, 10).rotateZ(Math.PI / 2),
+    new THREE.CylinderGeometry(0.14, 0.2, 0.62, 8).rotateZ(-0.6).translate(0.55, 0.32, 0),
+    new THREE.BoxGeometry(0.46, 0.2, 0.2).rotateZ(-0.35).translate(0.86, 0.6, 0),
+    new THREE.BoxGeometry(0.1, 0.16, 0.24).translate(0.62, 0.72, 0),
+    new THREE.CylinderGeometry(0.055, 0.045, 0.62, 6).rotateZ(1.0).translate(0.62, -0.32, 0.12), new THREE.CylinderGeometry(0.055, 0.045, 0.62, 6).rotateZ(0.7).translate(0.56, -0.34, -0.12),
+    new THREE.CylinderGeometry(0.055, 0.045, 0.62, 6).rotateZ(-1.0).translate(-0.62, -0.3, 0.12), new THREE.CylinderGeometry(0.055, 0.045, 0.62, 6).rotateZ(-0.8).translate(-0.6, -0.32, -0.12),
+    new THREE.CylinderGeometry(0.03, 0.08, 0.5, 6).rotateZ(-2.3).translate(-0.72, 0.05, 0),
+    new THREE.BoxGeometry(0.42, 0.06, 0.5).translate(-0.05, 0.27, 0),
+  ].map(g => clean(g)));
+  const hm = std({ roughness: 0.38, metalness: 0.1 }, 1.2);
+  const H = new THREE.InstancedMesh(hg, hm, HORSES.length), c = new THREE.Color();
+  HORSES.forEach((h, i) => H.setColorAt(i, c.set(pick(['#f4efe6', '#f4efe6', '#e8d9b8', '#5a3622', '#d8b060', '#f0e8f0']))));
+  H.castShadow = false; carRot.add(H); HORSES.mesh = H;
+  // вогники: фестон, ребра даху, колона
+  const CB = [];
+  for (let j = 0; j < 96; j++) { const a = j / 96 * TAU; CB.push({ x: Math.cos(a) * 8.5, y: 4.95, z: Math.sin(a) * 8.5, s: 0.1, k: 2, a, sub: 0 }); }
+  for (let j = 0; j < 96; j++) { const a = (j + 0.5) / 96 * TAU; CB.push({ x: Math.cos(a) * 8.5, y: 4.0, z: Math.sin(a) * 8.5, s: 0.08, k: 2, a, sub: 1 }); }
+  for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; for (let j = 1; j < 10; j++) { const u = j / 10, rr = lerp(8.4, 0.5, u), y = lerp(5.0, 7.6, u) + 0.06; CB.push({ x: Math.cos(a) * rr, y, z: Math.sin(a) * rr, s: 0.08, k: 2, a: a + u * 2, sub: 2 }); } }
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 6; j++) { const a = i / 8 * TAU; CB.push({ x: Math.cos(a) * 1.55, y: 1.2 + j * 0.62, z: Math.sin(a) * 1.55, s: 0.07, k: 4 }); }
+  carRot.add(bulbMesh(CB, 1.0));
+  const cl = new THREE.PointLight(0xffb060, 60, 20, 2); cl.position.set(0, 3.6, 0); carG.add(cl);
+}
+function updateCarousel(t) {
+  for (let i = 0; i < HORSES.length; i++) {
+    const h = HORSES[i], y = 1.55 + 0.32 * Math.sin(t * 2.2 + h.ph) * CARU.run;
+    _o.position.set(Math.cos(h.a) * h.rr, y, Math.sin(h.a) * h.rr); _o.rotation.set(0, Math.PI / 2 - h.a, 0.08 * Math.cos(t * 2.2 + h.ph) * CARU.run); _o.scale.setScalar(1.15); _o.updateMatrix();
+    HORSES.mesh.setMatrixAt(i, _o.matrix);
+  }
+  _o.scale.setScalar(1);
+  HORSES.mesh.instanceMatrix.needsUpdate = true;
+}
+const CARU = { ang: 0, run: 1 };
+
+/* ================= ЛАНЦЮГОВА КАРУСЕЛЬ ================= */
+const swG = new THREE.Group(); swG.position.set(SW.x, 0, SW.z); scene.add(swG);
+const swTop = new THREE.Group(); swTop.position.y = 15.2; swG.add(swTop);
+const NSW = 20, SWR = 6.2, SWL = 6.4;
+const SWU = { ang: 0, om: 0, th: 0 };
+let swChains, swSeats;
+{
+  const tw = new THREE.Mesh(mergeGeometries([new THREE.CylinderGeometry(3.4, 3.6, 0.5, 32).translate(0, 0.25, 0), new THREE.CylinderGeometry(0.62, 0.9, 15.0, 16).translate(0, 7.8, 0)].map(g => clean(g, true))), std({ color: 0xf0f0f0, roughness: 0.45, metalness: 0.3 }));
+  tw.castShadow = true; swG.add(tw);
+  const canT = stripeTex(['#2a6cf0', '#ffd23a'], 20, 1024, 128, (g, w, h) => { g.fillStyle = '#ffffff'; g.fillRect(0, h - 12, w, 12); });
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 6.8, 2.0, 40, 1, true).translate(0, 0.9, 0), std({ map: canT, side: THREE.DoubleSide, roughness: 0.5, emissive: 0xffffff, emissiveMap: canT, emissiveIntensity: 0.22 }));
+  swTop.add(can);
+  swTop.add(new THREE.Mesh(clean(new THREE.TorusGeometry(SWR, 0.1, 6, 80).rotateX(Math.PI / 2).translate(0, -0.1, 0)), whiteSteel));
+  swTop.add(new THREE.Mesh(clean(new THREE.SphereGeometry(0.7, 14, 10).translate(0, 2.1, 0)), brassMat));
+  const SB = [];
+  for (let j = 0; j < 80; j++) { const a = j / 80 * TAU; SB.push({ x: Math.cos(a) * 6.85, y: -0.12, z: Math.sin(a) * 6.85, s: 0.11, k: 3, a, r: 1, h: (j % 10) / 10 }); }
+  for (let i = 0; i < 20; i++) { const a = i / 20 * TAU; for (let j = 1; j < 8; j++) { const u = j / 8; SB.push({ x: Math.cos(a) * lerp(6.8, 0.8, u), y: lerp(-0.1, 1.9, u) + 0.07, z: Math.sin(a) * lerp(6.8, 0.8, u), s: 0.08, k: 3, a, r: u, h: (i % 5) / 5 }); } }
+  swTop.add(bulbMesh(SB, 1.0));
+  const TB = []; for (let j = 0; j < 30; j++) for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + j * 0.4; TB.push({ x: Math.cos(a) * 0.78, y: 0.8 + j * 0.47, z: Math.sin(a) * 0.78, s: 0.07, k: 3, a: j * 0.3, r: 0, h: 0.6 }); }
+  swG.add(bulbMesh(TB, 0.8));
+  const chainG = clean(new THREE.CylinderGeometry(0.018, 0.018, 1, 4).translate(0, -0.5, 0));
+  swChains = new THREE.InstancedMesh(chainG, whiteSteel, NSW * 2); swChains.frustumCulled = false; swTop.add(swChains);
+  const seatG = mergeGeometries([new THREE.BoxGeometry(0.55, 0.08, 0.6).translate(0, 0, 0), new THREE.BoxGeometry(0.55, 0.55, 0.06).translate(0, 0.27, -0.3)].map(g => clean(g)));
+  swSeats = new THREE.InstancedMesh(seatG, std({ roughness: 0.4, metalness: 0.3 }), NSW); const c = new THREE.Color();
+  for (let i = 0; i < NSW; i++) swSeats.setColorAt(i, c.set(i % 2 ? '#ffd23a' : '#2a6cf0'));
+  swSeats.frustumCulled = false; swTop.add(swSeats);
+}
+const _q = new THREE.Quaternion(), _d = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3();
+function updateSwing() {
+  const th = SWU.th;
+  for (let i = 0; i < NSW; i++) {
+    const a = i / NSW * TAU, ca = Math.cos(a), sa = Math.sin(a);
+    const seat = V3(ca * (SWR + Math.sin(th) * SWL), -0.2 - Math.cos(th) * SWL, sa * (SWR + Math.sin(th) * SWL));
+    for (let k = 0; k < 2; k++) {
+      const off = (k ? 0.27 : -0.27); _a.set(ca * SWR - sa * off, -0.2, sa * SWR + ca * off); _b.set(seat.x - sa * off, seat.y + 0.02, seat.z + ca * off);
+      _d.copy(_b).sub(_a); const L = _d.length(); _q.setFromUnitVectors(V3(0, -1, 0), _d.normalize());
+      _o.position.copy(_a); _o.quaternion.copy(_q); _o.scale.set(1, L, 1); _o.updateMatrix(); swChains.setMatrixAt(i * 2 + k, _o.matrix);
+    }
+    _o.scale.set(1, 1, 1); _o.position.copy(seat); _o.rotation.set(0, -a, 0); _o.rotateZ(th); _o.updateMatrix(); swSeats.setMatrixAt(i, _o.matrix);
+  }
+  swChains.instanceMatrix.needsUpdate = swSeats.instanceMatrix.needsUpdate = true;
+}
+
+/* ================= КАНАТНА ДОРОГА ================= */
+const CAB = { lanes: [], cabs: [] };
+{
+  const pts = CABLE.map(([x, y, z]) => V3(x, y, z));
+  const TW = [];
+  // опори: решітчасті стовпи з поперечиною
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i], prv = pts[i - 1], dir = p.clone().sub(prv).setY(0).normalize(), nrm = V3(-dir.z, 0, dir.x);
+    const top = p.y + 0.8;
+    for (const s of [-1, 1]) TW.push(tube(V3(p.x + nrm.x * s * 1.4, 0, p.z + nrm.z * s * 1.4), V3(p.x + nrm.x * s * 0.35, top, p.z + nrm.z * s * 0.35), 0.28, 0.16, 6));
+    for (let y = 3; y < top - 1; y += 3.2) { const k = y / top; const w = lerp(1.4, 0.35, k); TW.push(tube(V3(p.x - nrm.x * w, y, p.z - nrm.z * w), V3(p.x + nrm.x * w, y + 1.6, p.z + nrm.z * w), 0.06, 0.06, 4)); }
+    TW.push(tube(V3(p.x - nrm.x * 3.2, top, p.z - nrm.z * 3.2), V3(p.x + nrm.x * 3.2, top, p.z + nrm.z * 3.2), 0.18, 0.18, 6));
+  }
+  const tm = new THREE.Mesh(mergeGeometries(TW), std({ color: 0x8a9098, metalness: 0.6, roughness: 0.45 })); tm.castShadow = true; scene.add(tm);
+  const RB = []; for (let i = 1; i < pts.length; i++) for (const s of [-1, 1]) { const p = pts[i], prv = pts[i - 1], dir = p.clone().sub(prv).setY(0).normalize(); RB.push({ x: p.x - dir.z * s * 3.3, y: p.y + 1.0, z: p.z + dir.x * s * 3.3, s: 0.16, k: 5, seed: i * 0.7 }); }
+  scene.add(bulbMesh(RB, 1.0));
+  // два канати (туди й назад), з провисанням між опорами
+  for (const s of [-1, 1]) {
+    const L = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const A = pts[i], B = pts[i + 1], dir = B.clone().sub(A).setY(0).normalize(), nrm = V3(-dir.z, 0, dir.x), n = 40, sag = A.distanceTo(B) * 0.03;
+      for (let j = 0; j < n; j++) { const u = j / n; L.push(V3(lerp(A.x, B.x, u) + nrm.x * s * 2.4, lerp(A.y, B.y, u) + 0.8 - sag * 4 * u * (1 - u), lerp(A.z, B.z, u) + nrm.z * s * 2.4)); }
+    }
+    const last = pts[pts.length - 1], dir = last.clone().sub(pts[pts.length - 2]).setY(0).normalize(); L.push(V3(last.x - dir.z * s * 2.4, last.y + 0.8, last.z + dir.x * s * 2.4));
+    const len = [0]; for (let i = 1; i < L.length; i++) len.push(len[i - 1] + L[i].distanceTo(L[i - 1]));
+    CAB.lanes.push({ L, len, total: len[len.length - 1], dir: s });
+    const lg = new THREE.BufferGeometry().setFromPoints(L);
+    const line = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0x5c6470, fog: true })); scene.add(line);
+  }
+  // нижня станція
+  const ST = [boxG(96, 0, -80, 18, 6.5, 12), boxG(96, 6.5, -80, 20, 0.5, 14), boxG(96, 7, -80, 6, 2.2, 6)];
+  const sm = new THREE.Mesh(mergeGeometries(ST), std({ color: 0xd8d4cc, roughness: 0.7 })); sm.castShadow = sm.receiveShadow = true; scene.add(sm);
+  const win = new THREE.Mesh(boxG(96, 1.2, -80, 18.1, 3.6, 12.1), basic({ color: hdr('#ffcf9a', 0.9), transparent: true, opacity: 0.55 })); scene.add(win);
+  // кабінки
+  const cg = mergeGeometries([new THREE.BoxGeometry(1.5, 1.4, 1.5).translate(0, -2.9, 0), new THREE.BoxGeometry(1.62, 0.16, 1.62).translate(0, -2.1, 0), new THREE.CylinderGeometry(0.035, 0.035, 2.0, 4).translate(0, -1.0, 0)].map(g => clean(g)));
+  const wg = clean(new THREE.BoxGeometry(1.54, 0.6, 1.54).translate(0, -2.75, 0));
+  const NCAB = 20;
+  const cm = new THREE.InstancedMesh(cg, std({ roughness: 0.4, metalness: 0.2 }), NCAB * 2), wm = new THREE.InstancedMesh(wg, basic({ color: 0xffffff }), NCAB * 2), c = new THREE.Color();
+  const cols = ['#e8342a', '#f2b81c', '#1e88e5', '#2bb04a', '#ff7b1c'];
+  for (let i = 0; i < NCAB * 2; i++) { cm.setColorAt(i, c.set(cols[i % 5])); wm.setColorAt(i, rand() < 0.75 ? c.setRGB(1, 0.75, 0.45).multiplyScalar(R(0.5, 0.9)) : c.setRGB(0.05, 0.05, 0.07)); CAB.cabs.push({ lane: i % 2, s0: Math.floor(i / 2) / NCAB }); }
+  cm.frustumCulled = wm.frustumCulled = false; scene.add(cm, wm); CAB.cm = cm; CAB.wm = wm;
+}
+function laneAt(lane, s, out) {
+  const L = lane.L, len = lane.len; let lo = 0, hi = len.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (len[m] < s) lo = m; else hi = m; }
+  const u = (s - len[lo]) / Math.max(1e-6, len[hi] - len[lo]);
+  out.lerpVectors(L[lo], L[hi], u); return Math.atan2(L[hi].x - L[lo].x, L[hi].z - L[lo].z);
+}
+const _cp = new THREE.Vector3();
+function updateCable(t) {
+  for (let i = 0; i < CAB.cabs.length; i++) {
+    const cb = CAB.cabs[i], lane = CAB.lanes[cb.lane], tot = lane.total;
+    let s = ((cb.s0 * tot + t * 3.2) % tot + tot) % tot; if (lane.dir < 0) s = tot - s;
+    const yaw = laneAt(lane, s, _cp), sc = Math.max(0.0001, smooth(0, 10, s) * smooth(0, 10, tot - s));
+    _o.position.copy(_cp); _o.rotation.set(0, yaw, reduceMotion ? 0 : 0.03 * Math.sin(t * 1.3 + i)); _o.scale.setScalar(sc * 1.35); _o.updateMatrix();
+    CAB.cm.setMatrixAt(i, _o.matrix); CAB.wm.setMatrixAt(i, _o.matrix);
+  }
+  _o.scale.setScalar(1);
+  CAB.cm.instanceMatrix.needsUpdate = CAB.wm.instanceMatrix.needsUpdate = true;
+}
+
+/* ================= ДЕРЕВА: осінні крони й блакитні ялини ================= */
+function crownGeo(seed, det) {
+  const rr = mulberry32(seed), parts = [];
+  for (let i = 0; i < 5; i++) {
+    const g = new THREE.IcosahedronGeometry(1, det), s = i ? 1.6 + rr() * 1.2 : 2.7;
+    g.scale(s, s * 0.82, s); const a = rr() * TAU, d = i ? 1.3 + rr() * 1.2 : 0;
+    g.translate(Math.cos(a) * d, (i ? 6.2 + rr() * 2.8 : 7.4), Math.sin(a) * d); parts.push(clean(g));
+  }
+  const g = mergeGeometries(parts), p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), k = 1 + 0.12 * Math.sin(x * 2.1 + z * 1.7) * Math.cos(y * 2.3 + x); p.setXYZ(i, x * k, 6.8 + (y - 6.8) * k, z * k); }
+  return g;
+}
+function spruceGeo() { const parts = []; for (let i = 0; i < 5; i++) parts.push(clean(new THREE.ConeGeometry(2.8 - i * 0.48, 3.2, 9).translate(0, 2.2 + i * 1.75, 0))); return mergeGeometries(parts); }
+const TREEPUSH = [];
+{
+  const crown = [crownGeo(11, 1), crownGeo(23, 1), crownGeo(37, 1)], crownFar = crownGeo(51, 0), spr = spruceGeo();
+  const trunk = clean(new THREE.CylinderGeometry(0.18, 0.32, 7, 6).translate(0, 3.5, 0));
+  const barkM = lambert({ color: 0x2e241c }); addLF(barkM, 2, 1);
+  const leafM = lambert({}); leafM.userData.key = 'leaf'; addLF(leafM, 1, 1.25);
+  const sprM = lambert({}); sprM.userData.key = 'spr'; addLF(sprM, 1, 1.1);
+  const groups = [[], [], [], [], []];
+  for (const t of TREES) { t.ry = R(0, TAU); if (t.k) groups[4].push(t); else if (t.far) groups[3].push(t); else groups[RI(0, 2)].push(t); }
+  const geos = [crown[0], crown[1], crown[2], crownFar, spr], c = new THREE.Color(), o = new THREE.Object3D();
+  groups.forEach((list, gi) => {
+    if (!list.length) return;
+    const im = new THREE.InstancedMesh(geos[gi], gi === 4 ? sprM : leafM, list.length);
+    list.forEach((t, i) => {
+      o.position.set(t.x, 0, t.z); o.rotation.set(0, t.ry, 0); o.scale.setScalar(t.s); o.updateMatrix(); im.setMatrixAt(i, o.matrix);
+      const u = rand();
+      if (gi === 4) c.setHSL(R(0.38, 0.46), R(0.2, 0.32), R(0.12, 0.17));
+      else if (u < 0.42) c.setHSL(R(0.08, 0.12), R(0.6, 0.78), R(0.26, 0.36));        // золоті клени й липи
+      else if (u < 0.62) c.setHSL(R(0.02, 0.05), R(0.55, 0.7), R(0.22, 0.3));         // червоні
+      else c.setHSL(R(0.16, 0.26), R(0.35, 0.5), R(0.16, 0.24));                       // ще зелені
+      im.setColorAt(i, c);
+      if (!t.far && Math.hypot(t.x, t.z) < 160) TREEPUSH.push({ x: t.x, z: t.z, h: 11 * t.s, r: 3.4 * t.s });
+    });
+    im.castShadow = !list[0].far; im.receiveShadow = false; scene.add(im);   // тінь на кронах уночі не видно, а коштує дорого
+  });
+  const near = TREES.filter(t => !t.far || rand() < 0.3);
+  const tim = new THREE.InstancedMesh(trunk, barkM, near.length);
+  near.forEach((t, i) => { o.position.set(t.x, 0, t.z); o.rotation.set(0, t.ry, 0); o.scale.set(t.s, t.s * (t.k ? 0.5 : 1), t.s); o.updateMatrix(); tim.setMatrixAt(i, o.matrix); });
+  tim.castShadow = true; scene.add(tim);
+}
+
+/* ================= МІСТО НАВКОЛО ПАРКУ ================= */
+const BLDR = [];   // габарити будинків — щоб камера ніколи не опинялась у даху чи стіні
+{
+  const A1 = nightAtlas('#8e8a82', 0.5), A2 = nightAtlas('#a19888', 0.42, 0.15), A3 = nightAtlas('#83868c', 0.38, 0.3);
+  const mats = [A1, A2, A3].map(A => std({ map: A.map, emissiveMap: A.em, emissive: 0xffffff, emissiveIntensity: 1.2, roughness: 0.9 }, 0.4));
+  const groups = [[], [], []], AVL = [];
+  const put = (x, z, w, d, h, ry) => { const m = ry ? Math.max(w, d) / 2 : 0; BLDR.push({ x, z, hw: (ry ? m : w / 2) + 3, hd: (ry ? m : d / 2) + 3, top: h }); const g = new THREE.BoxGeometry(w, h, d).translate(0, h / 2, 0); if (ry) g.rotateY(ry); g.translate(x, 0, z); planarUV(g, 16); groups[RI(0, 2)].push(g.toNonIndexed()); };
+  // будинки на протилежному боці Сумської
+  for (let x = -330; x < 330;) { const w = R(26, 50); put(x + w / 2, 104, w, 16, RI(4, 8) * 3.4, 0); x += w + R(5, 12); }
+  // далекі квартали: Павлове Поле з висотками — на півночі, куди веде канатна дорога
+  for (let k = 0; k < 130; k++) { const a = R(0, TAU), rr = R(400, 900); const x = Math.cos(a) * rr, z = Math.sin(a) * rr - 80; const north = z < -300; const tall = rand() < 0.25, h = (tall ? RI(14, 24) : north ? RI(5, 12) : RI(3, 9)) * 3.1; put(x, z, tall ? R(16, 26) : R(24, 64), tall ? R(14, 20) : R(12, 20), h, R(0, 3.14)); if (tall) AVL.push({ x, y: h + 1.5, z, s: 0.7, k: 5, seed: R(0, 10) }); }
+  scene.add(bulbMesh(AVL, 1.0));
+  groups.forEach((gl, gi) => { if (!gl.length) return; const m = new THREE.Mesh(mergeGeometries(gl), mats[gi]); m.receiveShadow = true; scene.add(m); });
+}
+
+/* ================= НІЧНЕ НЕБО, МІСЯЦЬ, ЗОРІ ================= */
+const skyVS = `varying vec3 vDir; void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const skyFS = `uniform vec3 uMoon; uniform float uTime, uMoonK; varying vec3 vDir;
+${GLSL_N3}
+float fbm(vec2 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++){ s += a * n3(vec3(p, 0.5 * float(i))); p *= 2.03; a *= 0.5; } return s; }
+void main(){
+  vec3 d = normalize(vDir); float y = d.y; float h = clamp(y, 0.0, 1.0);
+  vec3 zen = vec3(0.004, 0.007, 0.022), mid = vec3(0.014, 0.022, 0.055), hor = vec3(0.075, 0.06, 0.08);
+  vec3 col = mix(hor, mid, smoothstep(0.0, 0.22, h)); col = mix(col, zen, smoothstep(0.18, 0.85, h));
+  col += vec3(0.17, 0.08, 0.035) * exp(-max(y, 0.0) * 9.0) * (0.75 + 0.5 * n3(d * 4.0));
+  float mu = max(dot(d, uMoon), 0.0);
+  col += vec3(0.16, 0.2, 0.3) * pow(mu, 8.0) * 0.35 * uMoonK + vec3(0.4, 0.46, 0.6) * pow(mu, 90.0) * 0.4 * uMoonK;
+  if (y > 0.0) {
+    vec2 cp = d.xz / (y + 0.12) * 0.8 + vec2(uTime * 0.004, uTime * 0.0012);
+    float c = fbm(cp * 1.3); c = smoothstep(0.55, 0.85, c) * smoothstep(0.02, 0.2, y) * (1.0 - smoothstep(0.5, 0.85, y));
+    vec3 cc = vec3(0.05, 0.045, 0.055) + vec3(0.1, 0.05, 0.03) * exp(-y * 5.0) + vec3(0.12, 0.14, 0.2) * pow(mu, 6.0) * uMoonK;
+    col = mix(col, cc, c * 0.28);
+  }
+  if (y < 0.0) col = mix(col, vec3(0.03, 0.028, 0.03), smoothstep(0.0, 0.1, -y));
+  gl_FragColor = vec4(col, 1.0);
+}`;
+const skyMat = new THREE.ShaderMaterial({ uniforms: { uMoon: MOONU, uTime: TIME, uMoonK: { value: 1 } }, vertexShader: skyVS, fragmentShader: skyFS, side: THREE.BackSide, depthWrite: false, depthTest: false });
+const sky = new THREE.Mesh(new THREE.SphereGeometry(3000, 48, 24), skyMat); sky.renderOrder = -1000; sky.frustumCulled = false; scene.add(sky);
+const skyGroup = new THREE.Group(); scene.add(skyGroup);
+const moonTex = (() => {
+  const S = 256, c = cnv(S), g = c.getContext('2d'), m = S / 2;
+  const r = g.createRadialGradient(m, m, 0, m, m, m); r.addColorStop(0, 'rgba(240,242,250,1)'); r.addColorStop(0.27, 'rgba(225,230,242,1)'); r.addColorStop(0.3, 'rgba(160,175,210,0.35)'); r.addColorStop(0.55, 'rgba(110,130,180,0.08)'); r.addColorStop(1, 'rgba(90,110,160,0)');
+  g.fillStyle = r; g.fillRect(0, 0, S, S);
+  g.globalCompositeOperation = 'source-atop';
+  for (let i = 0; i < 14; i++) { const a = R(0, TAU), rr = R(0, 0.22) * S, s = R(5, 18); g.fillStyle = `rgba(150,155,170,${R(0.15, 0.35)})`; g.beginPath(); g.arc(m + Math.cos(a) * rr, m + Math.sin(a) * rr, s, 0, TAU); g.fill(); }
+  return ctex(c, true, false);
+})();
+const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonTex, color: hdr('#e8ecf8', 1.5), depthWrite: false, transparent: true, fog: false }));
+moon.position.copy(MOONDIR).multiplyScalar(1400); moon.scale.setScalar(130); moon.renderOrder = -900; skyGroup.add(moon);
+{
+  const N = Q.stars, pos = new Float32Array(N * 3), aM = new Float32Array(N * 4);
+  for (let n = 0; n < N; n++) {
+    const u = rand() * 2 - 1, a = rand() * TAU, s = Math.sqrt(1 - u * u), y = Math.abs(u) * 0.98 + 0.02;
+    const x = Math.cos(a) * s, z = Math.sin(a) * s, l = Math.hypot(x, y, z);
+    pos.set([x / l * 1500, y / l * 1500, z / l * 1500], n * 3); aM.set([Math.pow(rand(), 3.0), rand(), rand() * 50, rand()], n * 4);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aM', new THREE.BufferAttribute(aM, 4));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uPx: { value: 1 }, uTime: TIME },
+    vertexShader: `uniform float uPx, uTime; attribute vec4 aM; varying vec3 vC;
+      void main(){
+        float hz = smoothstep(0.04, 0.2, normalize(position).y);
+        float tw = 0.7 + 0.3 * sin(uTime * (0.8 + aM.w * 2.5) + aM.z);
+        float b = (0.22 + 1.0 * aM.x) * tw * hz;
+        vC = mix(vec3(0.75, 0.82, 1.0), vec3(1.0, 0.9, 0.75), aM.w) * b;
+        gl_PointSize = b > 0.01 ? (1.3 + 2.0 * aM.x) * uPx : 0.0;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `varying vec3 vC; void main(){ vec2 q = gl_PointCoord - 0.5; float r2 = dot(q, q) * 4.0; if (r2 > 1.0) discard; gl_FragColor = vec4(vC * (1.0 - r2), 1.0); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  const pts = new THREE.Points(g, m); pts.frustumCulled = false; pts.renderOrder = -800; skyGroup.add(pts); skyGroup.userData.stars = m;
+}
+const envScene = new THREE.Scene();
+envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 48, 24), new THREE.ShaderMaterial({ uniforms: { uMoon: MOONU, uTime: TIME, uMoonK: { value: 1.6 } }, vertexShader: skyVS, fragmentShader: skyFS, side: THREE.BackSide, depthWrite: false })));
+for (const [x, y, z, s, c, k] of [[0, -14, 0, 30, '#16120e', 1], [-40, 2, -20, 16, '#7a4a20', 0.7], [40, 2, -30, 16, '#4a3a70', 0.6], [0, 2, 46, 14, '#80522a', 0.6], [0, 12, -40, 12, '#c06090', 0.5]]) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(s, 16, 12), new THREE.MeshBasicMaterial({ color: hdr(c, k) })); m.position.set(x, y, z); envScene.add(m);
+}
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(envScene, 0, 0.1, 200).texture;
+
+/* ---------- світло ---------- */
+const moonLight = new THREE.DirectionalLight(0xa8bce8, 0.16);
+moonLight.castShadow = true; moonLight.shadow.mapSize.set(Q.shadow, Q.shadow);
+Object.assign(moonLight.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 10, far: 800 });
+moonLight.shadow.bias = -0.0005; moonLight.shadow.normalBias = 0.35;
+moonLight.target.position.set(0, 0, -20); moonLight.position.copy(MOONDIR).multiplyScalar(360).add(V3(0, 0, -20)); scene.add(moonLight, moonLight.target);
+const hemi = new THREE.HemisphereLight(0x34446c, 0x1a140e, 0.55); scene.add(hemi);
+for (const m of MATS) m.envMapIntensity = 0.55 * m.userData.envK;
+renderer.toneMappingExposure = 1.08;
+FOGU.c.value.set('#33405e');
+
+/* ================= САЛЮТ ================= */
+const FWS = 12, FWP = Q.fw, FWT = 4, FWR = 10;          // снарядів у пулі, іскор, слід, точок ракети
+const FWV = FWP * FWT + FWR;
+const fwA = { aO: new Float32Array(FWS * FWV * 3), aV: new Float32Array(FWS * FWV * 3), aCol: new Float32Array(FWS * FWV * 3), aP: new Float32Array(FWS * FWV * 4), aS: new Float32Array(FWS * FWV * 2) };
+for (let i = 0; i < FWS * FWV; i++) fwA.aP[i * 4] = -1e6;
+const fwGeo = new THREE.BufferGeometry();
+fwGeo.setAttribute('position', new THREE.BufferAttribute(fwA.aO, 3));
+for (const [k, n] of [['aV', 3], ['aCol', 3], ['aP', 4], ['aS', 2]]) fwGeo.setAttribute(k, new THREE.BufferAttribute(fwA[k], n));
+const fwMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: TIME, uPS: PSU, uFogD: FOGD },
+  vertexShader: `uniform float uTime, uPS, uFogD; attribute vec3 aV, aCol; attribute vec4 aP; attribute vec2 aS; varying vec3 vC;
+    void main(){
+      float type = aP.y, tr = aP.z, life = aP.w; vec3 p = position; float b = 0.0, sz = 1.0;
+      if (type < 0.5) {
+        float age = uTime - aP.x - tr * 0.05;
+        if (age > 0.0 && age < life) {
+          float dr = (1.0 - exp(-1.35 * age)) / 1.35;
+          p = position + aV * dr + vec3(0.0, -2.6 * aS.y * age * age, 0.0);
+          float f = 1.0 - age / life;
+          b = f * f * (1.0 - tr * 0.24) * (1.0 + 0.3 * exp(-age * 5.0)) * smoothstep(0.0, 0.3, age);
+          if (aS.x > 0.62 && age > life * 0.5) b *= 0.3 + 1.4 * step(0.5, fract(sin(floor(age * 24.0) * 12.9 + aS.x * 78.0) * 43758.5));
+          sz = 1.0 - tr * 0.18;
+        }
+      } else {
+        float age = uTime - (aP.x - 1.6) - tr * 0.035;
+        if (age > 0.0 && age < 1.6) { float u = age / 1.6, eu = 1.0 - (1.0 - u) * (1.0 - u); p = mix(aV, position, eu); b = (0.6 + 0.4 * sin(age * 50.0 + tr)) * (1.0 - tr * 0.09) * 0.75; sz = 0.75 - tr * 0.04; }
+      }
+      vec4 mv = viewMatrix * vec4(p, 1.0);
+      float fz = uFogD * 0.45 * max(-mv.z, 0.0); vC = aCol * max(b, 0.0) * exp(-fz * fz);
+      float s = uPS * 1.25 * sz / max(1.0, -mv.z);
+      gl_PointSize = b > 0.004 ? clamp(s, 1.6, 36.0) : 0.0;
+      gl_Position = b > 0.004 ? projectionMatrix * mv : vec4(2.0, 2.0, 2.0, 1.0);
+    }`,
+  fragmentShader: `varying vec3 vC; void main(){ vec2 q = gl_PointCoord - 0.5; float r2 = dot(q, q) * 4.0; if (r2 > 1.0) discard; gl_FragColor = vec4(vC * (exp(-r2 * 6.0) * 1.3 + 0.25 * (1.0 - r2)), 1.0); }`,
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+});
+const fwPts = new THREE.Points(fwGeo, fwMat); fwPts.frustumCulled = false; fwPts.renderOrder = 6; scene.add(fwPts);
+const fwLight = new THREE.PointLight(0xffffff, 0, 500, 1.6); scene.add(fwLight);
+const FWQ = []; let fwSlot = 0;
+const PAL = { red: ['#ff3a2a', '#ff7a5a'], gold: ['#ffb43a', '#ffe08a'], blue: ['#3a7bff', '#8ab8ff'], green: ['#3aff7a', '#a8ffc8'], violet: ['#b05aff', '#ff8ae8'], white: ['#fff4e0', '#ffffff'], pink: ['#ff4a9a', '#ffb0d8'] };
+const _c1 = new THREE.Color(), _c2 = new THREE.Color();
+const _cr = new THREE.Vector3(), _cu = new THREE.Vector3();
+function fireShell(at, kind, pos) {
+  const slot = fwSlot++ % FWS, base = slot * FWV;
+  kind = kind || pick(['peony', 'peony', 'two', 'ring', 'willow', 'crackle', 'flag', 'heart']);
+  const pal = PAL[pick(Object.keys(PAL))], pal2 = PAL[pick(Object.keys(PAL))];
+  const speed = kind === 'willow' ? R(19, 23) : kind === 'heart' ? 30 : R(25, 32);
+  camera.updateMatrixWorld(); _cr.setFromMatrixColumn(camera.matrixWorld, 0); _cu.set(0, 1, 0);
+  const life0 = kind === 'willow' ? 3.6 : kind === 'crackle' ? 2.6 : 2.2;
+  const grav = kind === 'willow' ? 2.0 : kind === 'heart' || kind === 'ring' ? 0.45 : 1.0;
+  const ringAx = V3(R(-0.4, 0.4), 1, R(-0.4, 0.4)).normalize(), rx = V3(1, 0, 0).cross(ringAx).normalize(), ry = ringAx.clone().cross(rx);
+  for (let j = 0; j < FWP; j++) {
+    let d;
+    if (kind === 'ring') { const a = j / FWP * TAU; d = rx.clone().multiplyScalar(Math.cos(a)).addScaledVector(ry, Math.sin(a)); }
+    else if (kind === 'heart') { const t = j / FWP * TAU, hx = 16 * Math.pow(Math.sin(t), 3), hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t); d = _cr.clone().multiplyScalar(hx / 17).addScaledVector(_cu, hy / 17 + 0.15); }
+    else { const u = rand() * 2 - 1, a = rand() * TAU, s = Math.sqrt(1 - u * u); d = V3(Math.cos(a) * s, u, Math.sin(a) * s).multiplyScalar(kind === 'two' && j % 2 ? 0.55 : R(0.9, 1.0)); }
+    let col;
+    if (kind === 'flag') col = _c1.set(d.y > 0.05 ? '#2a6cff' : '#ffd21a');
+    else if (kind === 'heart') col = _c1.set(j % 3 ? '#ff3a5a' : '#ff9ab0');
+    else if (kind === 'willow') col = _c1.set(j % 4 ? '#ffb040' : '#fff0c0');
+    else if (kind === 'crackle') col = _c1.set(j % 3 ? '#fff4e0' : '#ffd070');
+    else if (kind === 'two') col = _c1.set(j % 2 ? pal2[0] : pal[0]);
+    else col = _c1.set(pal[j % 2]);
+    const k = kind === 'flag' ? 2.0 : 2.3;
+    const life = life0 * R(0.85, 1.15), crk = kind === 'crackle' ? 0.9 : rand() * 0.6;
+    for (let tr = 0; tr < FWT; tr++) {
+      const i = base + j * FWT + tr;
+      fwA.aO.set([pos.x, pos.y, pos.z], i * 3); fwA.aV.set([d.x * speed, d.y * speed, d.z * speed], i * 3);
+      fwA.aCol.set([col.r * k, col.g * k, col.b * k], i * 3); fwA.aP.set([at, 0, tr, life], i * 4); fwA.aS.set([crk, grav], i * 2);
+    }
+  }
+  // ракета, що злітає з-за дерев
+  const lx = pos.x + R(-6, 6), lz = pos.z + R(-6, 6);
+  for (let tr = 0; tr < FWR; tr++) {
+    const i = base + FWP * FWT + tr;
+    fwA.aO.set([pos.x, pos.y, pos.z], i * 3); fwA.aV.set([lx, 8, lz], i * 3); fwA.aCol.set([2.2, 1.5, 0.8], i * 3); fwA.aP.set([at, 1, tr, 1.6], i * 4); fwA.aS.set([0, 0], i * 2);
+  }
+  for (const k of ['position', 'aV', 'aCol', 'aP', 'aS']) fwGeo.attributes[k].needsUpdate = true;
+  FWQ.push({ at, pos: pos.clone(), col: kind === 'flag' ? _c2.set('#ffe08a').clone() : _c1.clone(), boom: false });
+}
+function randShellPos() { return V3(R(-105, 45), R(64, 98), R(-235, -195)); }
+const FWSHOW = { next: reduceMotion ? 1e9 : 7, end: 0 };
+function startShow(t) {
+  const kinds = ['peony', 'two', 'ring', 'willow', 'crackle', 'peony', 'heart', 'flag'];
+  for (let i = 0; i < 8; i++) fireShell(t + 1.6 + i * 0.95 + R(0, 0.3), i >= 6 ? kinds[i] : pick(kinds.slice(0, 6)), i === 6 ? V3(-40, 88, -215) : i === 7 ? V3(12, 80, -220) : randShellPos());
+  FWSHOW.end = t + 1.6 + 8 * 0.95 + 3; FWSHOW.next = t + 42;
+}
+
+/* ---------- звук: тихий нічний вітер і далекі «бах» салюту ---------- */
+let AC = null, SND = null;
+function audio() {
+  try {
+    if (!AC) {
+      try { if (window.parent !== window && window.parent.__sharedAudio) AC = window.parent.__sharedAudio(); } catch (e) { AC = null; }
+      if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; AC = new C(); }
+      const master = AC.createGain(); master.gain.value = 0; master.connect(AC.destination);
+      const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320; lp.Q.value = 0.3;
+      const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 0.5;
+      const gF = AC.createGain(), gB = AC.createGain(); gF.gain.value = 0.35; gB.gain.value = 0.1;
+      lp.connect(gF); bp.connect(gB); gF.connect(master); gB.connect(master);
+      const boomBus = AC.createGain(); boomBus.gain.value = 0; boomBus.connect(AC.destination);
+      const len = Math.floor(AC.sampleRate * 8), buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      SND = { master, lp, bp, gB, buf, next: 0, boomBus };
+    }
+    if (AC.state === 'suspended') AC.resume().catch(() => {});
+  } catch (e) { return null; }
+  return AC;
+}
+function boom(delay) {
+  if (!AC || !SND || AC.state !== 'running' || PAUSED) return;
+  try {
+    const t = AC.currentTime + Math.max(0, delay), src = AC.createBufferSource(), f = AC.createBiquadFilter(), e = AC.createGain();
+    f.type = 'lowpass'; f.frequency.value = R(140, 220); src.buffer = SND.buf;
+    e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(0.5, t + 0.012); e.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
+    src.connect(f); f.connect(e); e.connect(SND.boomBus); src.start(t, Math.random() * 6, 1.2); src.onended = () => { try { e.disconnect(); } catch (er) {} };
+  } catch (er) {}
+}
+function audioTick() {
+  if (!AC || !SND || AC.state !== 'running') return;
+  const now = AC.currentTime, w = 0.5 + 0.5 * Math.sin(T * 0.11) * Math.sin(T * 0.037 + 1);
+  SND.master.gain.setTargetAtTime(PAUSED ? 0 : 0.009 + 0.006 * w, now, 1.2);
+  SND.boomBus.gain.setTargetAtTime(PAUSED ? 0 : 0.05, now, 0.3);
+  SND.bp.frequency.setTargetAtTime(320 + 260 * w, now, 0.8);
+  if (PAUSED) return;
+  if (SND.next < now) SND.next = now + 0.05;
+  if (SND.next - now > 1.2) return;
+  const t = SND.next, src = AC.createBufferSource(), env = AC.createGain();
+  src.buffer = SND.buf; env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(1, t + 0.4); env.gain.setValueAtTime(1, t + 4.6); env.gain.linearRampToValueAtTime(0, t + 5.0);
+  src.connect(env); env.connect(SND.lp); env.connect(SND.bp);
+  src.start(t, Math.random() * 2.8, 5.05); src.onended = () => { try { env.disconnect(); } catch (e) {} };
+  SND.next = t + 4.6;
+}
+addEventListener('pagehide', () => { try { if (SND) { SND.master.gain.cancelScheduledValues(0); SND.master.gain.value = 0; SND.master.disconnect(); SND.boomBus.disconnect(); } } catch (e) {} });
+
+/* ---------- post ---------- */
+const rt = new THREE.WebGLRenderTarget(innerWidth * Q.pr, innerHeight * Q.pr, { type: THREE.HalfFloatType, samples: Q.msaa });
+const composer = new EffectComposer(renderer, rt);
+composer.addPass(new RenderPass(scene, camera));
+/* захист від «вигорілих» квадратів і смуг: NaN/нескінченність у HalfFloat-буфері розмазується блумом на пів екрана */
+composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); if (any(isnan(c.rgb)) || any(isinf(c.rgb))) c = vec4(0.0, 0.0, 0.0, 1.0); gl_FragColor = vec4(clamp(c.rgb, 0.0, 40.0), 1.0); }' }));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.8, 0.5, 0.86);
+{ const bs = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => bs(Math.max(2, Math.round(w * 0.6)), Math.max(2, Math.round(h * 0.6))); }   // блум у зменшеній роздільності — м’якше й швидше
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+const grade = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime; varying vec2 vUv;
+  void main(){ vec4 c=texture2D(tDiffuse,vUv); c.rgb = clamp(c.rgb, 0.0, 1.0); vec2 q=vUv-0.5; float v=smoothstep(0.95,0.3,length(q*vec2(1.0,0.92))); c.rgb*=mix(0.72,1.0,v);
+  float l=dot(c.rgb,vec3(0.299,0.587,0.114)); c.rgb=mix(c.rgb*vec3(0.92,0.97,1.08), c.rgb*vec3(1.05,1.0,0.92), smoothstep(0.08,0.6,l));
+  c.rgb = c.rgb * c.rgb * (3.0 - 2.0 * c.rgb) * 0.2 + c.rgb * 0.8;
+  float n=fract(sin(dot(vUv*vec2(1731.0,977.0)+fract(uTime)*13.0,vec2(12.9898,78.233)))*43758.5453); c.rgb+=(n-0.5)*0.016; gl_FragColor=c; }`
+});
+composer.addPass(grade);
+
+/* ---------- controls & camera moves ---------- */
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.06; controls.maxPolarAngle = 1.6; controls.minDistance = 6; controls.maxDistance = 320;
+controls.screenSpacePanning = true;
+/* ---------- обліт парку і перевірка «камера у відкритому повітрі» ---------- */
+const ORB = { c: V3(0, 0, -35), r: 130, per: 80, a: 0, k: 0 };      // один оберт ≈ 80 с
+const ORB_FACE = Math.atan2(Math.sin(WH.ry), Math.cos(WH.ry));      // азимут, з якого колесо видно «в обличчя»
+function safeCam(p) {
+  for (const b of BLDR) if (Math.abs(p.x - b.x) < b.hw && Math.abs(p.z - b.z) < b.hd && p.y < b.top + 6) p.y = b.top + 6;
+  if (Math.abs(p.x) < 32 && Math.abs(p.z - GATE_Z) < 7 && p.y < 17) p.y = 17;                 // колонада входу
+  if (p.x > 84 && p.x < 108 && p.z > -90 && p.z < -70 && p.y < 13) p.y = 13;                 // станція канатки
+  if (Math.hypot(p.x - WH.x, p.z - WH.z) < 18 && p.y < 3) p.y = 3;                             // опори колеса
+  if (p.y < 1.3) p.y = 1.3;
+  return p;
+}
+function orbitPose(a, p, t) {
+  p.set(ORB.c.x + Math.sin(a) * ORB.r, 40 + 5 * Math.sin(a * 2 + 1), ORB.c.z + Math.cos(a) * ORB.r);
+  t.set(Math.sin(a) * 4, 28, -44 + Math.cos(a) * 3);          // ціль — між центром парку і колесом
+  return safeCam(p);
+}
+const VIEWS = {
+  // головний ракурс: з боку Сумської, трохи над колонадою входу — видно вхід, алею з гірляндами, фонтан, колесо і канатку
+  // головний ракурс — повільний обліт усього парку (позиція береться з orbitPose; тут лише запасне значення)
+  drone: { p: [0, 47, 97], t: [0, 19, -36] },
+  wheel: { p: [26, 4.5, -10], t: [0, 27, -50] },
+  top: { p: [-6, 60, -44], t: [6, 10, 40] },          // вигляд з верхньої кабінки колеса на парк і вхід
+  cable: { p: [86, 31, -52], t: [8, 24, -94] },
+  carousel: { p: [-15, 3.0, 9], t: [-27, 3.4, -5] },
+  fountain: { p: [3, 2.4, 42], t: [0, 10, -30] },
+  gate: { p: [14, 3.2, 92], t: [0, 8.5, 58] },
+  plan: { p: [0, 230, 50], t: [0, 0, -30] },
+};
+function viewVec(name) {
+  const v = VIEWS[name] || VIEWS.drone, p = new THREE.Vector3(...v.p), t = new THREE.Vector3(...v.t), asp = innerWidth / innerHeight;
+  if (!VIEWS[name] || name === 'drone') orbitPose(ORB.a, p, t);
+  if (asp < 0.9) p.sub(t).multiplyScalar(1.35).add(t);
+  return { p, t };
+}
+let tween = null;
+const ease = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+let lastTouch = -1e9, idleT0 = 0;
+function flyTo(name, dur = 2.4) {
+  const { p, t } = viewVec(name);
+  if (reduceMotion || dur < 0.05) { camera.position.copy(p); controls.target.copy(t); tween = null; lastTouch = performance.now() - 1500; idleT0 = T; return; }
+  tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: p, t1: t, k: 0, dur };
+}
+let userMoved = false, curView = 'drone';
+controls.addEventListener('start', () => { tween = null; lastTouch = performance.now(); userMoved = true; });
+controls.addEventListener('end', () => { lastTouch = performance.now(); });
+renderer.domElement.addEventListener('wheel', () => { lastTouch = performance.now(); userMoved = true; tween = null; }, { passive: true });
+setTimeout(() => { $('#hint').style.opacity = 0; }, 12000);
+
+/* ---------- вбудовування в головний сайт (iframe) ---------- */
+const QS = new URLSearchParams(location.search);
+const EMBED = QS.has('embed');
+if (EMBED) document.body.classList.add('embed');
+let SHIFT = 0, PAUSED = QS.has('paused');
+if (EMBED) addEventListener('keydown', (e) => {
+  if (['ArrowRight', 'ArrowLeft', ' ', 'PageDown', 'PageUp', 'Escape', 'f', 'F', '1', '2', '3', '4', '5', '6', '7'].includes(e.key)) {
+    e.preventDefault(); parent.postMessage({ key: e.key }, '*');
+  }
+});
+addEventListener('message', (ev) => {
+  const d = ev.data || {};
+  if (d.shift !== undefined) { SHIFT = +d.shift || 0; document.body.style.setProperty('--card', (SHIFT * 2) + 'px'); onResize(); }
+  if (d.view) { curView = VIEWS[d.view] ? d.view : 'drone'; userMoved = false; flyTo(curView, d.instant ? 0.01 : 2.6); }
+  if (d.paused !== undefined) { const was = PAUSED; PAUSED = !!d.paused; if (!PAUSED) { clock.getDelta(); if (was && !reduceMotion) FWSHOW.next = Math.min(FWSHOW.next, T + 4); } else if (SND && AC) { SND.master.gain.setTargetAtTime(0, AC.currentTime, 0.2); SND.boomBus.gain.setTargetAtTime(0, AC.currentTime, 0.1); } }
+});
+
+function onResize() {
+  const w = innerWidth, h = innerHeight;
+  camera.aspect = w / h; camera.fov = w / h < 0.9 ? 52 : 36; camera.updateProjectionMatrix();
+  if (SHIFT) camera.setViewOffset(w, h, SHIFT, 0, w, h); else camera.clearViewOffset();
+  renderer.setSize(w, h); composer.setSize(w, h);
+  const pr = renderer.getPixelRatio(), H = h * pr, f = 2 * Math.tan(camera.fov * D2R / 2);
+  PXU.value = f / H; PSU.value = H / f;
+  skyGroup.userData.stars.uniforms.uPx.value = pr;
+}
+addEventListener('resize', onResize);
+
+/* ---------- дотик до неба — салют ---------- */
+const ndc = new THREE.Vector2(), ray = new THREE.Raycaster();
+let lastTapFw = -10;
+function tapFirework(x, y) {
+  if (T - lastTapFw < 0.7) return; lastTapFw = T;
+  const r = renderer.domElement.getBoundingClientRect(); ndc.set((x - r.left) / r.width * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const d = ray.ray.direction, o = ray.ray.origin;
+  // точка на віддалі ~ за колесом, але не нижче за дерева
+  let k = Math.max(80, (o.z + 210) / Math.max(0.2, -d.z)); if (!isFinite(k) || d.z > -0.2) k = 260;
+  const p = o.clone().addScaledVector(d, Math.min(k, 380)); p.y = clamp(p.y, 55, 120);
+  fireShell(T, null, p);
+}
+let down = null;
+renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; audio(); });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!down) return; const d = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
+  if (d < 12 && dt < 600) tapFirework(e.clientX, e.clientY);
+});
+addEventListener('keydown', () => audio());
+
+/* ---------- start ---------- */
+if (QS.has('shift')) { SHIFT = +QS.get('shift'); document.body.style.setProperty('--card', (SHIFT * 2) + 'px'); }
+const START_VIEW = VIEWS[QS.get('view')] ? QS.get('view') : 'drone';
+curView = START_VIEW;
+onResize();
+updateWheel(0); updateCarousel(0); updateSwing(); updateCable(0);
+renderer.shadowMap.needsUpdate = true;
+let T = +QS.get('tt') || 0;
+{
+  const { p, t } = viewVec(START_VIEW);
+  if (reduceMotion || QS.has('nointro')) { camera.position.copy(p); controls.target.copy(t); lastTouch = QS.has('hold') ? 1e15 : performance.now() - 1500; }
+  else { camera.position.set(150, 70, 230); controls.target.set(0, 18, -20); tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: p, t1: t, k: 0, dur: 6.5 }; }
+}
+const clock = new THREE.Clock();
+let first = true;
+if (QS.has('fw')) FWSHOW.next = T + 0.5;
+if (EMBED) { try { if (window.parent.__sharedAudio) audio(); } catch (e) {} }
+const FPSM = { n: 0, t0: performance.now() };
+window.gorky = { dbg: { FWSHOW, FWQ, fwLight, GOND }, fpsReset: () => { FPSM.n = 0; FPSM.t0 = performance.now(); }, fpsNow: () => +(FPSM.n * 1000 / (performance.now() - FPSM.t0)).toFixed(1), view: (v) => flyTo(VIEWS[v] ? v : 'drone', 0.01), show: () => startShow(T), fire: (k) => fireShell(T, k, randShellPos()),
+  state: () => ({ T: +T.toFixed(2), fps: window.__quality ? +(window.__quality.fps || 0).toFixed(1) : 0, level: window.__quality ? window.__quality.level : -1, audio: AC ? AC.state : 'none' }) };
+
+/* режими підсвічування колеса: веселка → сині й жовті хвилі → прапор → мерехтіння зірок */
+const WCOL = [new THREE.Color(1.0, 0.75, 0.8), new THREE.Color(0.9, 0.75, 0.4), new THREE.Color(0.6, 0.65, 0.9), new THREE.Color(1.0, 0.92, 0.8)];
+const _wc = new THREE.Color();
+const FCOLS = [new THREE.Color('#2f6dff'), new THREE.Color('#8a4dff'), new THREE.Color('#12c8c0'), new THREE.Color('#ffb43a')];
+const BASE = { p: new THREE.Vector3(), t: new THREE.Vector3() };
+const camOff = new THREE.Vector3();
+let driftK = 0, wheelRot = 0;
+window.gorky.checkOrbit = () => { const p = new THREE.Vector3(), t = new THREE.Vector3(); let worst = 1e9, lifted = 0; for (let i = 0; i < 720; i++) { const a = i / 720 * TAU; orbitPose(a, p, t); const y0 = p.y; safeCam(p); if (p.y !== y0) lifted++; for (const b of BLDR) { const dx = Math.max(0, Math.abs(p.x - b.x) - b.hw + 3), dz = Math.max(0, Math.abs(p.z - b.z) - b.hd + 3), dy = Math.max(0, p.y - b.top); worst = Math.min(worst, Math.hypot(dx, dz, dy)); } } return { minClearanceToBuildings: +worst.toFixed(1), lifted }; };
+function frame() {
+  requestAnimationFrame(frame);
+  if (PAUSED) return;
+  const raw = clock.getDelta(); tick(Math.min(raw, 0.05), Math.min(raw, 0.25));
+}
+function tick(dt, rdt = dt) {
+  T += dt; TIME.value = T;
+  const cp = camera.position;
+  // прибираємо торішній дрейф перед керуванням (щоб OrbitControls працював із «чистою» позицією)
+  cp.sub(camOff); camOff.set(0, 0, 0);
+  if (tween) {
+    tween.k = Math.min(1, tween.k + rdt / tween.dur); const e = ease(tween.k);
+    cp.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.t0, tween.t1, e);
+    if (tween.k >= 1) { tween = null; idleT0 = T; }
+  }
+  // камера НЕ облітає парк сама; якщо її покрутили — через 8 с плавно повертається на основний ракурс
+  if (userMoved && !tween && performance.now() - lastTouch > 8000) { userMoved = false; if (curView === 'drone') ORB.a = Math.atan2(cp.x - ORB.c.x, cp.z - ORB.c.z); flyTo(curView, 3.2); }
+  controls.update(dt);
+  const tg = controls.target; tg.x = clamp(tg.x, -220, 220); tg.z = clamp(tg.z, -260, 160); tg.y = clamp(tg.y, 0.5, 80);
+  // обліт парку: дуже повільно, з плавним розгоном після перельоту чи дотику
+  const orbiting = curView === 'drone' && !tween && !userMoved && !reduceMotion;
+  ORB.k = orbiting ? Math.min(1, ORB.k + dt / 5) : 0;
+  if (orbiting) { ORB.a += dt * TAU / ORB.per * smooth(0, 1, ORB.k) * (1 - 0.35 * Math.cos(2 * (ORB.a - ORB_FACE))); orbitPose(ORB.a, cp, tg); }   // повільніше, коли колесо видно анфас
+  safeCam(cp);
+  for (const t of TREEPUSH) { const dx = cp.x - t.x, dz = cp.z - t.z; if (Math.abs(dx) > t.r || Math.abs(dz) > t.r) continue; const d = Math.hypot(dx, dz); if (d < t.r && cp.y < t.h && cp.y > 2.0) { const k = t.r / Math.max(d, 0.01); cp.x = t.x + dx * k; cp.z = t.z + dz * k; } }
+  // ледь помітний «подих» камери в спокої: кілька метрів, без обертання навколо парку
+  const idle = !tween && !userMoved && !reduceMotion && curView !== 'drone';
+  driftK = idle ? Math.min(1, driftK + dt / 5) : Math.max(0, driftK - dt * 1.5);
+  if (driftK > 0) {
+    const k = smooth(0, 1, driftK) * 0.4, tt = T - idleT0;
+    _d.copy(cp).sub(tg); const rgt = V3(_d.z, 0, -_d.x).normalize();
+    camOff.copy(rgt).multiplyScalar(2.4 * Math.sin(tt * 0.05) * k).add(V3(0, 0.8 * Math.sin(tt * 0.071) * k, 0));
+    cp.add(camOff);
+  }
+  camera.lookAt(tg);
+  camera.updateMatrixWorld();
+  sky.position.copy(cp); skyGroup.position.copy(cp);
+  FOGU.v.value.copy(MOONDIR).transformDirection(camera.matrixWorldInverse);
+  grade.uniforms.uTime.value = T;
+
+  // колесо: повільне обертання і зміна світлових програм
+  wheelRot += dt * TAU / (reduceMotion ? 300 : 170); wheelR.rotation.z = wheelRot; updateWheel(wheelRot);
+  {
+    const show = T < FWSHOW.end + 1 && T > FWSHOW.end - 12;
+    const m = T / 15, i = Math.floor(m) % 4, f = smooth(0.82, 1, m - Math.floor(m)), j = (i + 1) % 4;
+    const w = [0, 0, 0, 0]; w[i] += 1 - f; w[j] += f;
+    const sk = show ? smooth(0, 1, Math.min(T - (FWSHOW.end - 12), FWSHOW.end + 1 - T)) : 0;
+    for (let q = 0; q < 4; q++) w[q] *= 1 - 0.5 * sk; w[3] += 0.5 * sk;
+    WMU.value.set(w[0], w[1], w[2], w[3]);
+    _wc.setRGB(0, 0, 0); for (let q = 0; q < 4; q++) _wc.r += WCOL[q].r * w[q], _wc.g += WCOL[q].g * w[q], _wc.b += WCOL[q].b * w[q];
+    wheelLight.color.copy(_wc); wheelLight.intensity = 420 + 70 * Math.sin(T * 1.3);
+  }
+  // карусель: крутиться, зупиняється, знову крутиться
+  { const c = T % 46, sp = smooth(0, 4, c) * (1 - smooth(32, 38, c)); CARU.run = sp; CARU.ang += dt * 0.42 * sp * (reduceMotion ? 0.5 : 1); carRot.rotation.y = CARU.ang; updateCarousel(T); }
+  // ланцюгова карусель: розгін, політ, гальмування
+  { const c = (T + 20) % 52, om = 1.15 * smooth(6, 14, c) * (1 - smooth(34, 44, c)) * (reduceMotion ? 0.6 : 1); SWU.om = om; SWU.ang += dt * om; swTop.rotation.y = -SWU.ang;
+    let th = SWU.th; for (let k = 0; k < 3; k++) th = Math.atan(om * om * (SWR + SWL * Math.sin(th)) / 9.8); SWU.th = lerp(SWU.th, th, Math.min(1, dt * 1.5)); updateSwing(); }
+  updateCable(T);
+  // фонтан: кольори підводних вогнів
+  { const c = (T / 10) % 4, i = Math.floor(c), f = smooth(0.7, 1, c - i); FCOL.value.copy(FCOLS[i]).lerp(FCOLS[(i + 1) % 4], f); fountLight.color.copy(FCOL.value); fountainPts.material.uniforms.uK.value = 1 + 0.08 * Math.sin(T * 0.6); }
+  // салют
+  if (T > FWSHOW.next) startShow(T);
+  let fl = 0; const fc = _c2.setRGB(0, 0, 0);
+  for (let i = FWQ.length - 1; i >= 0; i--) {
+    const s = FWQ[i], age = T - s.at;
+    if (!s.boom && age > -0.05) { s.boom = true; boom(s.pos.distanceTo(cp) / 340); }
+    if (age > 4) { FWQ.splice(i, 1); continue; }
+    if (age > 0) { const k = Math.exp(-age * 3.2); if (k > fl) { fl = k; fc.copy(s.col); fwLight.position.copy(s.pos); } }
+  }
+  fwLight.intensity = fl * 7000; fwLight.color.copy(fc).multiplyScalar(1 / Math.max(0.2, Math.max(fc.r, fc.g, fc.b)));
+  bloom.strength = 0.8 + 0.15 * fl;
+  audioTick();
+  composer.render(); FPSM.n++;
+  if (first) { first = false; const L = $('#loader'); L.style.opacity = 0; L.style.pointerEvents = 'none'; if (QS.has('hold')) L.hidden = true; else setTimeout(() => { L.hidden = true; }, 950); }
+}
+frame();
+
+window.__three = { renderer, scene, camera, composer, controls }; // для діагностики
+autoQuality({ renderer, composer, onResize, name: 'gorky' });
+/* згладжування FXAA вмикаємо одразу (MSAA вимкнено) */
+{ const fx = composer.passes[composer.passes.length - 2]; if (fx && fx !== grade && fx.uniforms && fx.uniforms.rcp) fx.enabled = true; }
+/* ---------- клавіша C: показати координати камери (щоб передати бажаний ракурс) ---------- */
+addEventListener('keydown', (e) => {
+  if (!['c', 'C', 'с', 'С'].includes(e.key)) return;
+  const r = (v) => [v.x, v.y, v.z].map((n) => Math.round(n)).join(', ');
+  let box = document.getElementById('camInfo');
+  if (!box) { box = document.createElement('div'); box.id = 'camInfo'; box.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:99;background:rgba(0,0,0,.8);color:#ffd43b;font:600 15px monospace;padding:10px 16px;border-radius:12px;user-select:all'; document.body.appendChild(box); }
+  box.textContent = `${document.title} — камера: [${r(camera.position)}]  ціль: [${r(controls.target)}]`;
+  clearTimeout(box._h); box._h = setTimeout(() => box.remove(), 15000);
+});</script>
